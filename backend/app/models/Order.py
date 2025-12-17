@@ -1,7 +1,15 @@
+from enum import Enum
 from datetime import datetime
-from sqlalchemy import CheckConstraint, String, Integer, Boolean, Numeric, ForeignKey, Float, DateTime, func
+from sqlalchemy import CheckConstraint, String, Integer, ForeignKey, Float, DateTime, Enum as SQLEnum, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from base import Base
+from app.models.base import Base
+
+class OrderStatus(str, Enum):
+    PENDING = 'pending'
+    PAID = 'paid'
+    SHIPPED = 'shipped'
+    DELIVERED = 'delivered'
+    CANCELLED = 'cancelled'
 
 
 
@@ -10,7 +18,7 @@ class Order(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False)
-    status: Mapped[str] = mapped_column(String, default='Pending', index=True)
+    status: Mapped[OrderStatus] = mapped_column(SQLEnum(OrderStatus), default=OrderStatus.PENDING, nullable=False)
 
     total_quantity: Mapped[int] = mapped_column(Integer, nullable=False ) #Дадаць абмежаванаць ад больш 0 
     total_price: Mapped[float] = mapped_column(Float(precision=2), nullable=False) #Дадаць абмежаванаць ад больш 0

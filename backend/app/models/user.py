@@ -1,6 +1,13 @@
-from sqlalchemy import String, Boolean
+import enum
+
+from sqlalchemy import String, Boolean, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from base import Base
+from app.models.base import Base
+
+
+class UserRole(enum.Enum):
+    USER = 'user'
+    ADMIN = 'admin'
 
 class User(Base):
     __tablename__ = 'users'
@@ -9,7 +16,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(String, unique=True)
     email: Mapped[str] = mapped_column(String, unique=True)
     hashed_password: Mapped[str] = mapped_column(String)
-    role: Mapped[bool] = mapped_column(Boolean)
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.USER, nullable=False)
 
     first_name: Mapped[str] = mapped_column(String)
     last_name: Mapped[str] = mapped_column(String)
@@ -19,5 +26,5 @@ class User(Base):
 
     def __repr__(self):
         return f'<User(id={self.id}, username={self.username}, role={self.role})>'
-
+    
 

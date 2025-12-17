@@ -1,6 +1,6 @@
 from sqlalchemy import String, Integer, Boolean, Numeric, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from base import Base
+from app.models.base import Base
 
 
 class Category(Base):

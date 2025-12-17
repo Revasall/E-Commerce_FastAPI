@@ -33,7 +33,7 @@ class DataBaseSettings(BaseSettings):
     DB_PASSWORD: str = Field(default='password')
     DB_HOST: str = Field(default='localhost')
     DB_PORT: str = Field(default='5432')
-    DB_NAME: str = Field(default='e-commerce_api')
+    DB_NAME: str = Field(default='e-commerce_fastapi')
     DB_ECHO: bool = Field(default=True)
     @property
     def database_url(self) -> str:
@@ -42,6 +42,7 @@ class DataBaseSettings(BaseSettings):
 
 class Settings:
     def __init__(self):
+        
         self.app = AppSettings()
         self.security = SecuritySettings()
         self.database = DataBaseSettings()
