@@ -8,7 +8,7 @@ class CartItemBase(BaseModel):
 class CartItemCreate(CartItemBase):
     ...
 
-class CartItemGet(CartItemBase):
+class CartItemRead(CartItemBase):
     product_title: str
     price: float
     total_price: float
@@ -22,6 +22,6 @@ class CartItemUpdate(CartItemBase):
 
 class Cart(BaseModel):
     user_id: int
-    items: list[CartItemGet]
+    items: list[CartItemRead]
     total_quantity: int
     total_price: float

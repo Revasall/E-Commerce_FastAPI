@@ -16,7 +16,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str = Field(max_length=30)
 
-class UserGet(UserBase):
+class UserRead(UserBase):
     
     id: int
     role: UserRole 

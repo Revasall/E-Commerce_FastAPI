@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
 from typing import AsyncGenerator, Annotated
@@ -23,3 +23,6 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
     yield
     await engine.dispose()
+
+
+SessionDep = Annotated[AsyncSession, Depends(get_session)]

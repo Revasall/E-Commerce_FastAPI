@@ -11,7 +11,7 @@ class ProductBase(BaseModel):
 class ProductCreate(ProductBase):
     ...
 
-class ProductGet(ProductBase):
+class ProductRead(ProductBase):
     id: int
 
     model_config = ConfigDict(from_attributes=True)

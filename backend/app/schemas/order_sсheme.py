@@ -15,7 +15,7 @@ class OrderItemCreate(OrderItemBase):
     order_id: int
     product_id: int
 
-class OrderItemGet(OrderItemBase):
+class OrderItemRead(OrderItemBase):
     id: int
     product_id: int
 
@@ -32,10 +32,10 @@ class OrderBase(BaseModel):
 class OrderCreate(OrderBase):
     ...
 
-class OrderGet(OrderBase):
+class OrderRead(OrderBase):
     id: int
     created_at: datetime
-    items: list[OrderItemGet]
+    items: list[OrderItemRead]
 
     model_config = ConfigDict(from_attributes=True)
 
