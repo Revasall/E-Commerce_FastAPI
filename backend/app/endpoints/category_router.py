@@ -2,7 +2,6 @@ from typing import List
 from fastapi import APIRouter, status
 
 from ..schemas.category_sсheme import CategoryRead, CategoryCreate, CategoryUpdate
-from ..database.database import SessionDep
 from ..services.category_service import CategoryServiceDep
 
 router = APIRouter(prefix='/categories', tags=['Categories'])
