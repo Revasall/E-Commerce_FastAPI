@@ -3,7 +3,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
 from typing import AsyncGenerator, Annotated
 from contextlib import asynccontextmanager
-from ..models.base import Base 
+
+from ..models.base import Base
 from ..config.config import settings
 
 engine = create_async_engine(

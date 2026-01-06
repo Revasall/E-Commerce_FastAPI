@@ -3,9 +3,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
-from app.models.product import Product 
-from app.schemas.product_sсheme import ProductCreate, ProductUpdate
-from app.core.exceptions import ObjectAlreadyExistsError
+from ..models.product import Product 
+from ..schemas.product_sсheme import ProductCreate, ProductUpdate
+from ..core.exceptions import ObjectAlreadyExistsError
 
 class ProductRepository:
     def __init__(self, db: AsyncSession):

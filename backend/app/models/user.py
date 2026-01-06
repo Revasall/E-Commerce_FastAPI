@@ -2,8 +2,7 @@ import enum
 
 from sqlalchemy import String, Boolean, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.models.base import Base
-
+from ..models.base import Base
 
 class UserRole(enum.Enum):
     USER = 'user'

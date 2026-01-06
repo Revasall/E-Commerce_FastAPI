@@ -29,7 +29,7 @@ class ProductService:
             obj=products,
             entity_name='Product',
             exception=ObjectNotFoundError,
-            validate_sheme=ProductRead
+            validate_scheme=ProductRead
         )
     
     async def get_by_category(self, category_id: int) -> List[ProductRead]:
@@ -39,7 +39,7 @@ class ProductService:
             obj=products,
             entity_name='Product',
             exception=ObjectNotFoundError,
-            validate_sheme=ProductRead
+            validate_scheme=ProductRead
         )
     
     async def get_by_id(self, product_id: int) -> ProductRead:
@@ -49,7 +49,7 @@ class ProductService:
             obj=product,
             entity_name='Product',
             exception=ObjectNotFoundError,
-            validate_sheme=ProductRead
+            validate_scheme=ProductRead
         )
     
     async def get_by_title(self, title: str) -> ProductRead:
@@ -59,7 +59,7 @@ class ProductService:
             obj=product,
             entity_name='Product',
             exception=ObjectNotFoundError,
-            validate_sheme=ProductRead
+            validate_scheme=ProductRead
         )
     
     async def update_product(self,product_id: int, product_data: ProductUpdate) -> ProductRead:
@@ -80,7 +80,7 @@ class ProductService:
             obj=product,
             entity_name='Product',
             exception=ObjectNotFoundError,
-            validate_sheme=ProductRead
+            validate_scheme=ProductRead
         )
     
 def get_product_service(session: SessionDep) -> ProductService:

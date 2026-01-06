@@ -36,7 +36,7 @@ class CategoryService:
             obj=categories,
             entity_name='Category',
             exception=ObjectNotFoundError,
-            validate_sheme=CategoryRead)
+            validate_scheme=CategoryRead)
     
     async def get_by_id(self, category_id: int) -> CategoryRead: 
         category = await self.repository.get_by_id(category_id)
@@ -45,7 +45,7 @@ class CategoryService:
             obj=category,
             entity_name='Category',
             exception=ObjectNotFoundError,
-            validate_sheme=CategoryRead)
+            validate_scheme=CategoryRead)
     
     async def get_by_title(self, title: str) -> CategoryRead:
         category = await self.repository.get_by_title(title)
@@ -54,7 +54,7 @@ class CategoryService:
             obj=category,
             entity_name='Category',
             exception=ObjectNotFoundError,
-            validate_sheme=CategoryRead)
+            validate_scheme=CategoryRead)
     
     
     async def get_by_slug(self, slug: str) -> CategoryRead:
@@ -65,7 +65,7 @@ class CategoryService:
             obj=category,
             entity_name='Category',
             exception=ObjectNotFoundError,
-            validate_sheme=CategoryRead)
+            validate_scheme=CategoryRead)
     
     
     async def update(self, category_id: int, category_data: CategoryUpdate) -> CategoryRead:

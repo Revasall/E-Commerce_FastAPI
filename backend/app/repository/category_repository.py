@@ -3,9 +3,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
-from app.models.category import Category
-from app.schemas.category_sсheme import CategoryCreate, CategoryUpdate
-from app.core.exceptions import ObjectAlreadyExistsError
+from ..core.exceptions import ObjectAlreadyExistsError
+from ..schemas.category_sсheme import CategoryCreate, CategoryUpdate
+from ..models.category import Category
 
 class CategoryRepository:
     def __init__(self, db: AsyncSession):
