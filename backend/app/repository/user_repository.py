@@ -39,17 +39,14 @@ class UserRepository:
         return result
     
     async def update_user(self, user_id: int, user_data: UserUpdate) -> User | None:
-        try:
-            user = await self.db.scalar(select(User).where(User.id == user_id))
+        user = await self.db.scalar(select(User).where(User.id == user_id))
+        if user:
             for key, value in user_data.model_dump(exclude_unset=True).items():
                 if value:
                     setattr(user, key, value)
             await self.db.commit()
             await self.db.refresh(user)
-            return user
-        except IntegrityError:
-            await self.db.rollback()
-            raise ObjectAlreadyExistsError('User with this username or email already exist.')
+        return user
         
     async def delete_user(self, user_id: int) -> User | None:
         user = await self.db.scalar(select(User).where(User.id == user_id))

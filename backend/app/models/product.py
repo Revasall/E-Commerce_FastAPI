@@ -9,12 +9,12 @@ class Product(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     
     title: Mapped[str] = mapped_column(String, unique=True, index=True)
-    description: Mapped[str] = mapped_column(Text)
-    price: Mapped[Numeric] = mapped_column(Numeric, nullable=False)
+    description: Mapped[str|None] = mapped_column(Text, default=None)
+    price: Mapped[float] = mapped_column(Numeric, nullable=False)
     
     category_id: Mapped[int] = mapped_column(ForeignKey('categories.id'))
     
-    image: Mapped[str] = mapped_column(String)
+    image: Mapped[str|None] = mapped_column(String, default=None)
 
     category = relationship('Category', back_populates='products')
 

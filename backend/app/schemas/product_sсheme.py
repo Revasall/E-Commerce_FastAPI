@@ -6,7 +6,7 @@ class ProductBase(BaseModel):
     category_id: int
     price: float = Field(gt=0)
     description: str | None = Field(default=None, max_length=1000)
-    image: str
+    image: str | None =  Field(default=None, max_length=1000)
 
 class ProductCreate(ProductBase):
     ...

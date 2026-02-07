@@ -10,16 +10,16 @@ class UserBase(BaseModel):
     first_name: str = Field(max_length=30)
     last_name: str = Field(max_length=30)
     image: str | None = Field(default=None)
+    role: UserRole = Field(default=UserRole.USER)
 
 
 
 class UserCreate(UserBase):
-    password: str = Field(max_length=30)
+    hashed_password: str = Field(max_length=30)
 
 class UserRead(UserBase):
     
     id: int
-    role: UserRole 
 
     model_config = ConfigDict(from_attributes=True)
 

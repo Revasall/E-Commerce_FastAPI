@@ -40,18 +40,14 @@ class CategoryRepository:
         return result
     
     async def update(self, category_id: int, category_data: CategoryUpdate) -> Category | None:
-        try:
-
-            category = await self.db.scalar(select(Category).where(Category.id == category_id))
+        category = await self.db.scalar(select(Category).where(Category.id == category_id))
+        if category:    
             for key, value in category_data.model_dump(exclude_unset=True).items():
                 if value:
                     setattr(category, key, value)
             await self.db.commit()
             await self.db.refresh(category)
-            return category
-        except IntegrityError:
-            await self.db.rollback()
-            raise ObjectAlreadyExistsError('Category with this slug already exist.')
+        return category
     
     async def delete(self, category_id: int) -> Category | None:
         category = await self.db.scalar(select(Category).where(Category.id == category_id))

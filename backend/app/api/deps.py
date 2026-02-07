@@ -3,7 +3,6 @@ from typing import Annotated
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer, HTTPBearer
 
-import app.core.security as security
 from ..models.user import User
 from ..schemas.user_sсheme import UserRead
 from ..database.database import SessionDep

@@ -2,18 +2,18 @@ import jwt
 from pwdlib import PasswordHash
 from datetime import timedelta, datetime, timezone
 
-from ..config.config import SecuritySettings
+from ..config.config import settings
 from ..models.user import User
-from .exceptions import InvalidTokenError, InvalidTokenTypeError, ExpiredTokenError, InvalidCredentialsError
+from .exceptions import InvalidTokenError, InvalidTokenTypeError, ExpiredTokenError
 
 
 class SecurityService:
 
     def __init__(self):
-        self.SECRET_KEY = SecuritySettings.SECRET_KEY
-        self.ALGORTITHM = SecuritySettings.ALGORITHM
-        self.ACCESS_TOKEN_EXPIRE_MINUTES = SecuritySettings.ACCESS_TOKEN_EXPIRE_MINUTES
-        self.REFRESH_TOKEN_EXPIRE_DAYS = SecuritySettings.REFRESH_TOKEN_EXPIRE_DAYS
+        self.SECRET_KEY = settings.security.SECRET_KEY
+        self.ALGORITHM = settings.security.ALGORITHM
+        self.ACCESS_TOKEN_EXPIRE_MINUTES = settings.security.ACCESS_TOKEN_EXPIRE_MINUTES
+        self.REFRESH_TOKEN_EXPIRE_DAYS = settings.security.REFRESH_TOKEN_EXPIRE_DAYS
         self.password_hash = PasswordHash.recommended()
         
     def get_password_hash(self, password: str) -> str:
@@ -35,7 +35,7 @@ class SecurityService:
         to_encode = payload.copy()
         expire = datetime.now(timezone.utc) + expires_delta
         to_encode.update({'exp': expire})
-        encode_jwt = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORTITHM)
+        encode_jwt = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
 
         return encode_jwt
 
@@ -81,7 +81,7 @@ class SecurityService:
             ) -> dict:
     
         try:
-            payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORTITHM])
+            payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
             if payload['token_type'] != expected_type:
                 raise InvalidTokenTypeError(
                     token_type=payload['token_type'],

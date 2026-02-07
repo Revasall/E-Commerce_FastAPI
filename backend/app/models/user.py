@@ -19,7 +19,7 @@ class User(Base):
 
     first_name: Mapped[str] = mapped_column(String)
     last_name: Mapped[str] = mapped_column(String)
-    image: Mapped[str] = mapped_column(String)
+    image: Mapped[str| None] = mapped_column(String, default=None)
 
     orders = relationship('Order', back_populates='user')
 

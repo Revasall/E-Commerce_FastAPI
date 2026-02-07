@@ -39,17 +39,14 @@ class ProductRepository:
         return result
     
     async def update(self, product_id: int, product_data: ProductUpdate) -> Product | None:
-        try:
-            product = await self.db.scalar(select(Product).where(Product.id == product_id))
-            for key, value in product_data.model_dump(exclude_unset=True):
+        product = await self.db.scalar(select(Product).where(Product.id == product_id))
+        if product:   
+            for key, value in product_data.model_dump(exclude_unset=True).items():
                 if value:
                     setattr(product, key, value)
             await self.db.commit()
             await self.db.refresh(product)
-            return product
-        except IntegrityError:
-            await self.db.rollback()
-            raise ObjectAlreadyExistsError('Product with this title already exist.')
+        return product
         
     async def delete(self, product_id: int) -> Product | None:
         product = await self.db.scalar(select(Product).where(Product.id == product_id))
