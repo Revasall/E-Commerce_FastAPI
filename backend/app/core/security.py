@@ -47,8 +47,8 @@ class SecurityService:
         
         payload = {
             'sub': str(user.id),
-            'email': user.username,
-            'role': user.role,
+            'username': user.username,
+            'role': user.role.value,
             'token_type': 'access'
         }
         if not expires_delta:

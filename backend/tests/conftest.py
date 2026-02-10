@@ -82,7 +82,7 @@ async def test_category(session):
     await session.commit()
 
 @pytest_asyncio.fixture(scope='function')
-async def test_product(session):
+async def test_product(session, test_category):
     """Create one test product for all tests"""
 
     product = Product(
@@ -90,7 +90,7 @@ async def test_product(session):
         description = 'An essay of up to five pages with an analis a specific topic',
         price = 150.00,
 
-        category_id = 1,
+        category_id = test_category.id,
 
         image = 'images/documents/essay1'
     )

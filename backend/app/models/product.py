@@ -12,7 +12,7 @@ class Product(Base):
     description: Mapped[str|None] = mapped_column(Text, default=None)
     price: Mapped[float] = mapped_column(Numeric, nullable=False)
     
-    category_id: Mapped[int] = mapped_column(ForeignKey('categories.id'))
+    category_id: Mapped[int|None] = mapped_column(ForeignKey('categories.id'), default=None)
     
     image: Mapped[str|None] = mapped_column(String, default=None)
 

@@ -22,7 +22,7 @@ class UserService:
         if existing:
             raise ObjectAlreadyExistsError('User with this email already exist.')
         
-        hashed_password = user_data.password
+        hashed_password = user_data.hashed_password
         new_user = await self.repository.create_user(user_data)
 
         return new_user
@@ -82,17 +82,22 @@ class UserService:
         
         if user_data.username:
             existing = await self.repository.get_user_by_username(user_data.username)
-            if existing:
+            if existing and existing.id != user_id:
                 raise ObjectAlreadyExistsError('User with this username already exist.')
             
         if user_data.email:
             existing = await self.repository.get_user_by_email(user_data.email)
-            if existing:
+            if existing and existing.id != user_id:
                 raise ObjectAlreadyExistsError('User with this email already exist.')
             
         user = await self.repository.update_user(user_id=user_id, user_data=user_data)
 
-        return UserRead.model_validate(user)
+        return ensure_exists(
+            obj=user,
+            entity_name='User',
+            exception=ObjectNotFoundError,
+            validate_scheme=UserRead
+        )
     
     async def delete_user(self, user_id: int) -> UserRead:
         user = await self.repository.delete_user(user_id)

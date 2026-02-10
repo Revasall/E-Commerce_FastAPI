@@ -34,7 +34,7 @@ class AuthService:
             user_id: str = payload.get('sub')
             if user_id is None:
                 raise InvalidTokenError
-        except jwt.JWTError:
+        except jwt.PyJWTError:
             raise InvalidTokenError
         
         try:
@@ -49,7 +49,7 @@ class AuthService:
             plain_password: str
             ) -> User:
         
-        user = await self.service.get_user_by_email(email, None)
+        user = await self.service.get_user_by_email(email, False)
         if not user or not self.security.verify_password(plain_password, user.hashed_password):
             raise InvalidCredentialsError
         return user
@@ -76,8 +76,8 @@ class AuthService:
             user_reg_data: UserCreate
             ) -> Token: 
         
-        hashed_password = self.security.get_password_hash(user_reg_data.password)
-        user_reg_data.password = hashed_password
+        hashed_password = self.security.get_password_hash(user_reg_data.hashed_password)
+        user_reg_data.hashed_password = hashed_password
         new_user = await self.service.create_user(user_reg_data)
 
         if not new_user:
@@ -101,7 +101,7 @@ class AuthService:
         if user_id is None:
             raise InvalidTokenError()
         
-        user = await self.service.get_user_by_id(user_id)
+        user = await self.service.get_user_by_id(user_id, False)
         new_access_token = self.security.create_access_token(user)
         new_refresh_token = self.security.create_refresh_token(user)
 

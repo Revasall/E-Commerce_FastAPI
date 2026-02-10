@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 class ProductBase(BaseModel):
     title: str = Field(max_length=50)
-    category_id: int
+    category_id: int|None = None
     price: float = Field(gt=0)
     description: str | None = Field(default=None, max_length=1000)
     image: str | None =  Field(default=None, max_length=1000)

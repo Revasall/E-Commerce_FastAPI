@@ -5,7 +5,7 @@ from datetime import timedelta
 from ...app.core.security import SecurityService
 from ...app.core.exceptions import InvalidTokenError, InvalidTokenTypeError, ExpiredTokenError
 from ...app.config.config import settings
-from ...app.models.user import User
+from ...app.models.user import User, UserRole
 
 
 
@@ -44,7 +44,8 @@ def test_create_jwt_token():
 def test_create_access_and_refresh_tokens():
     user = User(id=1, 
                 username='john123', 
-                email='john_doe@test.com')
+                email='john_doe@test.com',
+                role=UserRole.USER)
     access = service.create_access_token(user)
     refresh = service.create_refresh_token(user)
 

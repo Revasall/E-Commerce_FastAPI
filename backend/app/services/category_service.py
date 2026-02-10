@@ -70,15 +70,22 @@ class CategoryService:
     
     async def update(self, category_id: int, category_data: CategoryUpdate) -> CategoryRead:
 
-        if category_data.slug:
-            existing = await self.repository.get_by_slug(category_data.slug)
-            if existing:
-                raise ObjectAlreadyExistsError('Category with this slug already exists.')
+        if not category_data.slug:
+            category_data.slug = slugify(category_data.title)
+
+
+        existing = await self.repository.get_by_slug(category_data.slug)
+        if existing and existing.id != category_id:
+            raise ObjectAlreadyExistsError('Category with this slug already exists.')
 
         category = await self.repository.update(category_id = category_id, category_data = category_data)
         
-        return CategoryRead.model_validate(category)
-        
+        return ensure_exists(
+            obj=category,
+            entity_name='Category',
+            exception=ObjectNotFoundError,
+            validate_scheme=CategoryRead
+            )     
 
     async def delete(self, category_id: int) -> None:
         category = await self.repository.delete(category_id=category_id)
