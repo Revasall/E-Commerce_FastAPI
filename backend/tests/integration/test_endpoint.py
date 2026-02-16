@@ -1,6 +1,7 @@
 import pytest
 
 from backend.app.models.user import User
+from backend.app.schemas.category_sсheme import CategoryRead
 
 
 @pytest.mark.asyncio 
@@ -108,4 +109,160 @@ class TestUserEndpoints:
 
 
 @pytest.mark.asyncio
-class TestCategoryEndpoints:...
+class TestCategoryEndpoints:
+
+    async def test_create_category(self, client, test_admin_auth_header, test_auth_header):
+        
+        payload = {
+            "title":"test_endpoint",
+            "slug":"test-endpoint"
+            }
+        
+        responce = await client.post('/categories/', json = payload, headers = test_admin_auth_header)
+        assert responce.status_code == 201
+
+        bad_json_responce = await client.post('/categories/', json = {'test':'test'}, headers = test_admin_auth_header)
+        assert bad_json_responce.status_code == 422
+
+        bad_auth_responce = await client.post('/categories/', json = payload, headers = test_auth_header)
+        assert bad_auth_responce.status_code == 403
+
+    async def test_get_all_categories(self, client, test_category):
+
+        responce = await client.get('/categories/')
+        assert responce.status_code == 200
+        data = responce.json()
+        assert isinstance(data, list) and data[0] != []
+
+    async def test_get_category_by_id(self, client, test_category):
+
+        responce = await client.get(f'/categories/id/{test_category.id}')
+        assert responce.status_code == 200
+        data = responce.json()
+        assert data['id'] == test_category.id
+
+        bad_responce = await client.get(f'/categories/id/999')
+        assert bad_responce.status_code == 404
+
+    async def test_get_category_by_slug(self, client, test_category):
+        
+        responce = await client.get(f'/categories/{test_category.slug}')
+        assert responce.status_code == 200
+        data = responce.json()
+        assert data['slug'] == test_category.slug
+
+        bad_responce = await client.get(f'/categories/bad-slug')
+        assert bad_responce.status_code == 404
+
+    async def test_update_category(self, client, test_category, test_admin_auth_header, test_auth_header):
+        payload = {
+            "title":"test_update",
+            "slug":"test-update"
+            }
+        
+        responce = await client.put(f'/categories/id/{test_category.id}', json = payload, headers = test_admin_auth_header)
+        assert responce.status_code == 200
+
+        bad_json_responce = await client.put('/categories/id/{test_category.id}', json = {'test':'test'}, headers = test_admin_auth_header)
+        assert bad_json_responce.status_code == 422
+
+        bad_id_responce = await client.put('/categories/id/999', json = {"title":"bad_end_test"}, headers = test_admin_auth_header)
+        assert bad_id_responce.status_code == 404
+
+        bad_auth_responce = await client.put('/categories/id/{test_category.id}', json = payload, headers = test_auth_header)
+        assert bad_auth_responce.status_code == 403
+
+    async def test_delete_category(self, client, test_category, test_admin_auth_header, test_auth_header):
+
+        bad_auth_responce = await client.delete(f'/categories/id/{test_category.id}', headers = test_auth_header)
+        assert bad_auth_responce.status_code == 403
+
+        bad_id_responce = await client.delete(f'/categories/id/999', headers = test_admin_auth_header)
+        assert bad_id_responce.status_code == 404
+
+        responce = await client.delete(f'/categories/id/{test_category.id}', headers = test_admin_auth_header)
+        assert responce.status_code == 200
+        data = responce.json()
+        assert data['id'] == test_category.id
+
+@pytest.mark.asyncio
+class TestProductEndpoints:
+
+    async def test_create_product(self, client, test_admin_auth_header, test_auth_header, test_category):
+        
+        payload = {
+            "title":"test_endpoint",
+            "category_id": str(test_category.id),
+            "price": "1.00",
+            "description":"desc",
+            "image":"test root"
+            }
+        
+        responce = await client.post('/products/', json = payload, headers = test_admin_auth_header)
+        assert responce.status_code == 201
+
+        bad_json_responce = await client.post('/products/', json = {'test':'test'}, headers = test_admin_auth_header)
+        assert bad_json_responce.status_code == 422
+
+        bad_auth_responce = await client.post('/products/', json = payload, headers = test_auth_header)
+        assert bad_auth_responce.status_code == 403
+
+    async def test_get_all_products(self, client, test_product):
+
+        responce = await client.get('/products/')
+        assert responce.status_code == 200
+        data = responce.json()
+        assert isinstance(data, list) and data[0] != []
+
+    async def test_get_product_by_id(self, client, test_product):
+
+        responce = await client.get(f'/products/id/{test_product.id}')
+        assert responce.status_code == 200
+        data = responce.json()
+        assert data['id'] == test_product.id
+
+        bad_responce = await client.get(f'/products/id/999')
+        assert bad_responce.status_code == 404
+
+    async def test_get_product_by_category(self, client, test_category, test_product):
+        
+        responce = await client.get(f'/products/{test_category.slug}')
+        assert responce.status_code == 200
+        data = responce.json()
+        assert isinstance(data, list) and data[0] != []
+    
+        bad_responce = await client.get(f'/products/bad-slug')
+        assert bad_responce.status_code == 404
+
+    async def test_get_update_product(self, client, test_product, test_admin_auth_header, test_auth_header):
+
+        payload = {
+            "title":"test_update",
+            "price": "2.00",
+            "description":"desc_update",
+            }
+        
+        responce = await client.put(f'/products/{test_product.id}', json = payload, headers = test_admin_auth_header)
+        assert responce.status_code == 200
+
+        bad_json_responce = await client.put('/products/{test_product.id}', json = {'test':'test'}, headers = test_admin_auth_header)
+        assert bad_json_responce.status_code == 422
+
+        bad_id_responce = await client.put('/products/999', json = {"title":"bad_end_test"}, headers = test_admin_auth_header)
+        assert bad_id_responce.status_code == 404
+
+        bad_auth_responce = await client.put('/products/{test_product.id}', json = payload, headers = test_auth_header)
+        assert bad_auth_responce.status_code == 403
+
+    async def test_delete_product(self, client, test_product, test_admin_auth_header, test_auth_header):
+
+        bad_auth_responce = await client.delete(f'/products/{test_product.id}', headers = test_auth_header)
+        assert bad_auth_responce.status_code == 403
+
+        bad_id_responce = await client.delete(f'/products/999', headers = test_admin_auth_header)
+        assert bad_id_responce.status_code == 404
+
+        responce = await client.delete(f'/products/{test_product.id}', headers = test_admin_auth_header)
+        assert responce.status_code == 200
+        data = responce.json()
+        assert data['id'] == test_product.id

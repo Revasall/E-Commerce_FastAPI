@@ -40,12 +40,12 @@ class ProductService:
             validate_scheme=ProductRead
         )
     
-    async def get_by_category(self, category_id: int) -> List[ProductRead]:
-        is_category_exist = await self.category_repository.get_by_id(category_id)
+    async def get_by_category(self, category_slug: str) -> List[ProductRead]:
+        category = await self.category_repository.get_by_slug(category_slug)
         
-        if is_category_exist:
-            products = await self.repository.get_by_category(category_id)
-            
+        if category:
+            products = await self.repository.get_by_category(category.id)
+
             return ensure_exists(
                 obj=products,
                 entity_name='Product',

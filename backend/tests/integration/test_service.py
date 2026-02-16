@@ -240,7 +240,7 @@ class TestCategoryService:
         assert update_category.id == test_category.id and update_category.title == category_update_data.title
         
         with pytest.raises(ObjectAlreadyExistsError) as err_slug_update:
-            await category_ser.update(1, category_update_data)
+            await category_ser.update(test_category.id-1, category_update_data)
         assert err_slug_update.value.status_code == 409
 
         with pytest.raises(ObjectNotFoundError) as err_id_update:
@@ -281,11 +281,13 @@ class TestProductService:
     async def test_get_product_by_data(self, session, test_product): 
 
         product_ser = ProductService(session)
+        category_ser = CategoryService(session)
 
         all_products = await product_ser.get_all_products()
         assert isinstance(all_products, list) and isinstance(all_products[0], ProductRead) 
 
-        category_products = await product_ser.get_by_category(test_product.category_id)
+        category = await category_ser.get_by_id(test_product.category_id) 
+        category_products = await product_ser.get_by_category(category.slug)
         assert isinstance(category_products, list) and category_products[0].category_id == test_product.category_id
         with pytest.raises(ObjectNotFoundError) as err_category:
             await product_ser.get_by_category(99)

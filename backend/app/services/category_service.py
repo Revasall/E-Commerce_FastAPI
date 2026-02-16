@@ -90,7 +90,11 @@ class CategoryService:
     async def delete(self, category_id: int) -> None:
         category = await self.repository.delete(category_id=category_id)
 
-        return ensure_exists(category, 'Category', ObjectNotFoundError, CategoryRead)
+        return ensure_exists(
+            category, 
+            'Category', 
+            ObjectNotFoundError, 
+            CategoryRead)
 
 
 def get_category_service(session: SessionDep) -> CategoryService:

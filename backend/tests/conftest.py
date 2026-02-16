@@ -69,6 +69,35 @@ async def test_user(session):
         except:
             await session.rollback()
 
+@pytest_asyncio.fixture(scope='function')
+async def test_admin(session):
+    """Create one test user for all tests"""
+
+    user = User(
+        username = 'admin_John123',
+        email = 'admin@test.com',
+        #password = '123'
+        hashed_password = '$argon2id$v=19$m=65536,t=3,p=4$Bh852Wf9IrbTXKc9Ygxeaw$2dOzYG8rzUHHjI2teX8h3GhP4O8Sl0LUb+P0999Ph3U',
+        role = UserRole.ADMIN,
+
+        first_name = 'John',
+        last_name = 'Doe',
+        image = 'images/1'
+    )
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+    yield user
+
+    #Delete user from database
+    existing_user = await session.get(User, user.id)
+    if existing_user:
+        try:
+            await session.delete(user)
+            await session.commit()
+        except:
+            await session.rollback()
+
 
 @pytest_asyncio.fixture(scope='function')
 async def test_refresh_token(client, test_user):
@@ -81,22 +110,23 @@ async def test_refresh_token(client, test_user):
     refresh_token = data['refresh_token']
     yield refresh_token
 
-@pytest_asyncio.fixture(scope='function')
-async def test_access_token(client, test_user):
-    """Returns authorization headers with a valid access token."""
-    responce = await client.post('/auth/login', data={
-        'username': test_user.email,
-        'password': '123'
-    })
-    data = responce.json()
-    access_token = data['access_token']
-    yield access_token
 
 @pytest_asyncio.fixture(scope='function')
 async def test_auth_header(client, test_user):
     """Returns authorization headers with a valid access token."""
     responce = await client.post('/auth/login', data={
         'username': test_user.email,
+        'password': '123'
+    })
+    data = responce.json()
+    token = data.get('access_token')
+    yield ({'Authorization': f'Bearer {token}'} if token else {})
+
+@pytest_asyncio.fixture(scope='function')
+async def test_admin_auth_header(client, test_admin):
+    """Returns authorization headers with a valid access token."""
+    responce = await client.post('/auth/login', data={
+        'username': test_admin.email,
         'password': '123'
     })
     data = responce.json()

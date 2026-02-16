@@ -25,7 +25,14 @@ async def get_all_products(
     
     return await service.get_all_products()
 
-@router.get('/{product_id}', response_model=ProductRead)
+@router.get('/{category_slug}', response_model=List[ProductRead])
+async def get_product_by_category(
+    category_slug: str,
+    service: ProductServiceDep
+):
+    return await service.get_by_category(category_slug)
+
+@router.get('/id/{product_id}', response_model=ProductRead)
 async def get_product_by_id(
     product_id: int,
     service: ProductServiceDep

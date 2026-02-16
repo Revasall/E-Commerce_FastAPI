@@ -24,7 +24,7 @@ async def get_all_categories(
 
     return await service.get_all()
 
-@router.get('/{category_id}', response_model=CategoryRead)
+@router.get('/id/{category_id}', response_model=CategoryRead)
 async def get_category_by_id(
     category_id: int, 
     service: CategoryServiceDep
@@ -40,7 +40,7 @@ async def get_category_by_slug(
     
     return await service.get_by_slug(category_slug)
 
-@router.put('/{category_id}', response_model=CategoryRead, dependencies=[Depends(allow_admin)])
+@router.put('/id/{category_id}', response_model=CategoryRead, dependencies=[Depends(allow_admin)])
 async def update_category(
     current_user: UserDep,
     category_id: int,
@@ -51,7 +51,7 @@ async def update_category(
 
     return await service.update(category_id=category_id, category_data=update_data)
 
-@router.delete('/{category_id}', response_model=CategoryRead, dependencies=[Depends(allow_admin)])
+@router.delete('/id/{category_id}', response_model=CategoryRead, dependencies=[Depends(allow_admin)])
 async def delete_category(
     current_user: UserDep,
     category_id: int,

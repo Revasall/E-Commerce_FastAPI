@@ -113,13 +113,14 @@ class TestProductRepository:
 
         good_res = await product_rep.create(good_product)
         assert good_res.title == good_product.title
+        good_res_id = good_res.id
 
         with pytest.raises(ObjectAlreadyExistsError) as err:
             await product_rep.create(good_product)
 
         assert err.value.status_code == 409
 
-        good_del = await product_rep.delete(1)
+        good_del = await product_rep.delete(good_res_id)
         bad_del = await product_rep.delete(99)
 
         assert good_del.title == good_res.title
@@ -141,14 +142,14 @@ class TestProductRepository:
         assert res_good_title.title == 'Essay'
         assert res_bad_title is None
 
-        res_good_id = await product_rep.get_by_id(1)
+        res_good_id = await product_rep.get_by_id(test_product.id)
         res_bad_id = await product_rep.get_by_id(100)
-        assert res_good_id.id == 1
+        assert res_good_id.id == test_product.id
         assert res_bad_id is None
 
-        res_good_category = await product_rep.get_by_category(1)
+        res_good_category = await product_rep.get_by_category(test_product.category_id)
         res_bad_category = await product_rep.get_by_category(100)
-        assert isinstance(res_good_category, list) and res_good_category[0].category_id == 1
+        assert isinstance(res_good_category, list) and res_good_category[0].category_id == test_product.category_id
         assert res_bad_category == []
 
     async def test_update_product(self, session, test_product):
@@ -157,7 +158,7 @@ class TestProductRepository:
         update_data = ProductUpdate(
             title='Update_Product'
         )
-        update_product = await product_rep.update(1, update_data)
+        update_product = await product_rep.update(test_product.id, update_data)
         bad_upd = await product_rep.update(99, update_data)
 
         assert update_product.title == update_data.title
@@ -180,6 +181,7 @@ class TestCategoryRepository:
         )
 
         good_res = await category_rep.create(good_category)
+        good_res_id = good_res.id
         assert good_res.title == good_category.title
 
         with pytest.raises(ObjectAlreadyExistsError) as err:
@@ -187,7 +189,7 @@ class TestCategoryRepository:
 
         assert err.value.status_code == 409
 
-        good_del = await category_rep.delete(1)
+        good_del = await category_rep.delete(good_res_id)
         bad_del = await category_rep.delete(99)
 
         assert good_del.title == good_res.title
@@ -209,9 +211,9 @@ class TestCategoryRepository:
         assert res_good_title.title == 'documents'
         assert res_bad_title is None
 
-        res_good_id = await category_rep.get_by_id(1)
+        res_good_id = await category_rep.get_by_id(test_category.id)
         res_bad_id = await category_rep.get_by_id(100)
-        assert res_good_id.id == 1
+        assert res_good_id.id == test_category.id
         assert res_bad_id is None
 
         res_good_slug = await category_rep.get_by_slug('documents')
@@ -225,12 +227,8 @@ class TestCategoryRepository:
         update_data = CategoryUpdate(
             title='Update_category'
         )
-        update_product = await category_rep.update(1, update_data)
+        update_product = await category_rep.update(test_category.id, update_data)
         bad_upd = await category_rep.update(99, update_data)
 
         assert update_product.title == update_data.title
         assert bad_upd is None
-
-
-    
-
