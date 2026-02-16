@@ -2,6 +2,8 @@ from fastapi import Depends
 from typing import Annotated, List
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.app.core.security import security_service
+
 
 from ..repository.user_repository import UserRepository
 from ..schemas.user_sсheme import UserBase, UserCreate, UserRead, UserUpdate
@@ -13,6 +15,7 @@ from ..database.database import SessionDep
 class UserService:
     def __init__(self, db: AsyncSession):
         self.repository = UserRepository(db)
+        self.security = security_service
 
     async def create_user(self, user_data: UserCreate) -> User:
         existing = await self.repository.get_user_by_username(user_data.username)
@@ -90,6 +93,9 @@ class UserService:
             if existing and existing.id != user_id:
                 raise ObjectAlreadyExistsError('User with this email already exist.')
             
+        if user_data.password:
+            user_data.password = security_service.get_password_hash(user_data.password)
+
         user = await self.repository.update_user(user_id=user_id, user_data=user_data)
 
         return ensure_exists(

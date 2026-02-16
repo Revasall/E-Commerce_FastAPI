@@ -2,7 +2,6 @@ from fastapi import status, HTTPException
 
 
 # Common Errors
-
 class ObjectNotFoundError(HTTPException):
     def __init__(self, object_name:str = 'Object'):
         super().__init__(

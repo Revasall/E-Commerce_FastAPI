@@ -14,10 +14,8 @@ from ..core.utils import ensure_exists
 from ..core.security import security_service
 from ..database.database import SessionDep
 
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/login')
 http_bearer = HTTPBearer()
-
 
 class AuthService:
     def __init__(self, db: AsyncSession):
@@ -27,30 +25,33 @@ class AuthService:
     async def get_current_user(
             self,
             token: str
-            ) -> User:
+            ) -> UserRead:
         
         try: 
             payload = self.security.decode_jwt_token(token, expected_type='access')
             user_id: str = payload.get('sub')
             if user_id is None:
                 raise InvalidTokenError
+            user = await self.service.get_user_by_id(int(user_id), scheme=True)
+            return user
         except jwt.PyJWTError:
             raise InvalidTokenError
-        
-        try:
-            user = await self.service.get_user_by_id(user_id, scheme=False)
-            return user
         except ObjectNotFoundError:
             raise InvalidCredentialsError
+
+             
+
     
     async def autenticate_user(
             self, 
             email:str,
             plain_password: str
             ) -> User:
-        
-        user = await self.service.get_user_by_email(email, False)
-        if not user or not self.security.verify_password(plain_password, user.hashed_password):
+        try:
+            user = await self.service.get_user_by_email(email, False)
+        except ObjectNotFoundError:
+            raise InvalidCredentialsError
+        if not self.security.verify_password(plain_password, user.hashed_password):
             raise InvalidCredentialsError
         return user
     

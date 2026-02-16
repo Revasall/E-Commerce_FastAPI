@@ -61,8 +61,49 @@ async def test_user(session):
     yield user
 
     #Delete user from database
-    await session.delete(user)
-    await session.commit()
+    existing_user = await session.get(User, user.id)
+    if existing_user:
+        try:
+            await session.delete(user)
+            await session.commit()
+        except:
+            await session.rollback()
+
+
+@pytest_asyncio.fixture(scope='function')
+async def test_refresh_token(client, test_user):
+    """Returns authorization headers with a valid access token."""
+    responce = await client.post('/auth/login', data={
+        'username': test_user.email,
+        'password': '123'
+    })
+    data = responce.json()
+    refresh_token = data['refresh_token']
+    yield refresh_token
+
+@pytest_asyncio.fixture(scope='function')
+async def test_access_token(client, test_user):
+    """Returns authorization headers with a valid access token."""
+    responce = await client.post('/auth/login', data={
+        'username': test_user.email,
+        'password': '123'
+    })
+    data = responce.json()
+    access_token = data['access_token']
+    yield access_token
+
+@pytest_asyncio.fixture(scope='function')
+async def test_auth_header(client, test_user):
+    """Returns authorization headers with a valid access token."""
+    responce = await client.post('/auth/login', data={
+        'username': test_user.email,
+        'password': '123'
+    })
+    data = responce.json()
+    token = data.get('access_token')
+    yield ({'Authorization': f'Bearer {token}'} if token else {})
+
+
 
 @pytest_asyncio.fixture(scope='function')
 async def test_category(session):
@@ -78,8 +119,14 @@ async def test_category(session):
     await session.refresh(category)
     yield category
 
-    await session.delete(category)
-    await session.commit()
+    existing_category = await session.get(Category, category.id)
+    if existing_category:
+        try:
+            await session.delete(category)
+            await session.commit()
+        except:
+            await session.rollback()
+
 
 @pytest_asyncio.fixture(scope='function')
 async def test_product(session, test_category):
@@ -100,7 +147,12 @@ async def test_product(session, test_category):
     await session.refresh(product)
     yield product
 
-    await session.delete(product)
-    await session.commit()
+    existing_product = await session.get(Product, product.id)
+    if existing_product:
+        try:
+            await session.delete(product)
+            await session.commit()
+        except:
+            await session.rollback()
 
 

@@ -19,7 +19,7 @@ class TestUserRepository:
     async def test_create_and_del_user(self, session):
         user_rep = UserRepository(db=session)
         
-        good_user = UserCreate(
+        user = UserCreate(
             username='test_us',
             email='test@test.com',
             first_name='Test',
@@ -28,29 +28,26 @@ class TestUserRepository:
         )
 
         
-        admin_user = good_user.model_copy()
-
-
-        good_res = await user_rep.create_user(good_user)
-        assert (good_res.username, good_res.email) == (good_user.username, good_user.email)
-        assert good_res.id is not None
-
-        with pytest.raises(ObjectAlreadyExistsError) as err:
-            await user_rep.create_user(good_user)
-
-        assert err.value.status_code == 409
-        
+        admin_user = user.model_copy()
         admin_user.username = 'test_us_2'
         admin_user.email = 'admin@test.com'
         admin_user.role = UserRole.ADMIN
+
+        good_res = await user_rep.create_user(user)
+        assert isinstance(good_res, User) and good_res.username == user.username
+        assert good_res.role == UserRole.USER
+
+        with pytest.raises(ObjectAlreadyExistsError) as err:
+            await user_rep.create_user(user)
+        assert err.value.status_code == 409
+
         admin_res = await user_rep.create_user(admin_user)
+        assert admin_res.role == UserRole.ADMIN
 
-        assert admin_res.role == admin_user.role
+        good_del = await user_rep.delete_user(admin_res.id)
+        assert good_del.username == admin_res.username
 
-        good_del = await user_rep.delete_user(1)
         bad_del = await user_rep.delete_user(99)
-
-        assert good_del.username == good_res.username
         assert bad_del is None 
 
     async def test_get_all_users(self, session):
@@ -69,9 +66,9 @@ class TestUserRepository:
         assert res_good_username.username == 'John123'
         assert res_bad_username is None
 
-        res_good_id = await user_rep.get_user_by_id(2)
+        res_good_id = await user_rep.get_user_by_id(test_user.id)
         res_bad_id = await user_rep.get_user_by_id(100)
-        assert res_good_id.id == 2
+        assert res_good_id.id == test_user.id
         assert res_bad_id is None
 
         res_good_email = await user_rep.get_user_by_email('john_doe@test.com')
@@ -85,7 +82,7 @@ class TestUserRepository:
         update_data = UserUpdate(
             username='Update_John'
         )
-        update_user = await user_rep.update_user(2, update_data)
+        update_user = await user_rep.update_user(test_user.id, update_data)
         bad_upd = await user_rep.update_user(99, update_data)
 
         assert update_user.username == update_data.username

@@ -1,15 +1,18 @@
 from typing import List
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, Depends
+
+from backend.app.api.deps import UserDep, allow_admin
 
 from ..schemas.category_sсheme import CategoryRead, CategoryCreate, CategoryUpdate
 from ..services.category_service import CategoryServiceDep
 
 router = APIRouter(prefix='/categories', tags=['Categories'])
 
-@router.post('/', response_model=CategoryRead, status_code=status.HTTP_201_CREATED)
+@router.post('/', response_model=CategoryRead, status_code=status.HTTP_201_CREATED, dependencies=[Depends(allow_admin)])
 async def create_category(
+    current_user: UserDep,
     category_data: CategoryCreate,
-    service: CategoryServiceDep
+    service: CategoryServiceDep,
     ):
 
     return await service.create(category_data)
@@ -37,8 +40,9 @@ async def get_category_by_slug(
     
     return await service.get_by_slug(category_slug)
 
-@router.put('/{category_id}', response_model=CategoryRead)
+@router.put('/{category_id}', response_model=CategoryRead, dependencies=[Depends(allow_admin)])
 async def update_category(
+    current_user: UserDep,
     category_id: int,
     update_data: CategoryUpdate,
     service: CategoryServiceDep
@@ -47,8 +51,9 @@ async def update_category(
 
     return await service.update(category_id=category_id, category_data=update_data)
 
-@router.delete('/{category_id}', response_model=CategoryRead)
+@router.delete('/{category_id}', response_model=CategoryRead, dependencies=[Depends(allow_admin)])
 async def delete_category(
+    current_user: UserDep,
     category_id: int,
     service: CategoryServiceDep
     ):

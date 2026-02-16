@@ -145,6 +145,7 @@ class TestAuthService:
         token_data = await auth_serv.login_for_token(email,password)
 
         good_user = await auth_serv.get_current_user(token_data.access_token)
+        assert isinstance(good_user, UserRead)
         assert good_user.id == test_user.id and  good_user.email == email
 
         with pytest.raises(InvalidTokenError) as err_token:

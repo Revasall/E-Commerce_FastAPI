@@ -16,19 +16,19 @@ async def get_all_users(
     
     return await service.get_all_users()
 
+@router.get('/me', response_model=UserRead)
+async def get_current_user(
+    current_user: UserDep,
+    ):
+
+    return current_user
+
 @router.get('/{user_id}', response_model=UserRead)
 async def get_user_by_id(
     user_id: int,
     service: UserServiceDep
 ):
-    return await service.get_user_by_id(user_id)
-
-@router.get('/me', response_model=UserRead)
-async def get_current_user(
-    current_user: UserDep
-    ):
-
-    return current_user
+    return await service.get_user_by_id(user_id, True)
 
 @router.put('/me', response_model=UserRead)
 async def update_user(
@@ -38,7 +38,7 @@ async def update_user(
 
     return await service.update_user(current_user.id, user_data)
 
-@router.delete('/me', response_model=UserRead)
+@router.delete('/me', response_model=UserRead, status_code=status.HTTP_200_OK)
 async def delete_user(
     current_user: UserDep,
     service: UserServiceDep

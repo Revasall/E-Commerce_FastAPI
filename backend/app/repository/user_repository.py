@@ -43,13 +43,15 @@ class UserRepository:
         if user:
             for key, value in user_data.model_dump(exclude_unset=True).items():
                 if value:
+                    if key == 'password':
+                        user.hashed_password == user_data.password
                     setattr(user, key, value)
             await self.db.commit()
             await self.db.refresh(user)
         return user
         
     async def delete_user(self, user_id: int) -> User | None:
-        user = await self.db.scalar(select(User).where(User.id == user_id))
+        user = await self.db.get(User, user_id)#await self.db.scalar(select(User).where(User.id == user_id))
 
         if user:
             await self.db.delete(user)
