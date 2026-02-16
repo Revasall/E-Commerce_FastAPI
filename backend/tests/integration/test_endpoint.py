@@ -107,7 +107,5 @@ class TestUserEndpoints:
         assert user_in_db is None
 
 
-# @pytest.mark.asyncio
-# class TestCategoryEndpoints:
-
-#     async def 
+@pytest.mark.asyncio
+class TestCategoryEndpoints:...
