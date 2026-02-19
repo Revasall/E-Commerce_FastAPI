@@ -58,6 +58,7 @@ class TestAuthEndpoints:
 
 
 
+
 @pytest.mark.asyncio 
 class TestUserEndpoints:
 
@@ -106,6 +107,10 @@ class TestUserEndpoints:
         session.expire_all()
         user_in_db = await session.get(User, test_user.id)
         assert user_in_db is None
+
+
+
+
 
 
 @pytest.mark.asyncio
@@ -184,6 +189,11 @@ class TestCategoryEndpoints:
         assert responce.status_code == 200
         data = responce.json()
         assert data['id'] == test_category.id
+
+
+
+
+
 
 @pytest.mark.asyncio
 class TestProductEndpoints:
