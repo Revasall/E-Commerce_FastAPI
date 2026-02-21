@@ -12,6 +12,8 @@ class CartItemCreate(CartItemBase):
     ...
 
 class CartItemRead(CartItemBase):
+    id: int
+    
     product_title: str
     price: float
     total_price: float

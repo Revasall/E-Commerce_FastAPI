@@ -19,7 +19,10 @@ class CartService:
     async def _build_cart_responce(self, cart: Cart) -> CartScheme:
         items = await self.repository.get_cart_items(cart.id)
         if items: 
-            cart_items_read = [CartItemRead.model_validate(item, update={'total_price': item.price * item.quantity}) for item in items]
+            cart_items_read = []
+            for item in items:
+                item.total_price = item.quantity * item.price
+                cart_items_read.append(CartItemRead.model_validate(item))
             total_quantity = sum(item.quantity for item in items)
             total_price = sum(item.price * item.quantity for item in items)
         else: 
@@ -68,7 +71,8 @@ class CartService:
         
         return await self._build_cart_responce(cart)
     
-    async def update_item(self, user_id: int, 
+    async def update_item(self, 
+                          user_id: int, 
                           item_id:int, 
                           item_update_data: CartItemUpdate) -> CartScheme:
 

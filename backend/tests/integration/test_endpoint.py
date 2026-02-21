@@ -276,3 +276,82 @@ class TestProductEndpoints:
         assert responce.status_code == 200
         data = responce.json()
         assert data['id'] == test_product.id
+
+
+
+
+
+
+@pytest.mark.asyncio
+class TestCartEndpoint:
+
+    async def test_get_cart(self, client, test_user, test_auth_header):
+
+        response = await client.get("/cart/", headers=test_auth_header)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["user_id"] == test_user.id
+        assert isinstance(data["items"], list)
+
+        bad_response = await client.get("/cart/")
+        assert bad_response.status_code == 401
+
+
+    async def test_add_item_to_cart(self, client, test_product, test_auth_header):
+        payload = {
+            "product_id": test_product.id,
+            "quantity": 2,
+            "cart_id": 0 
+        }
+        
+        response = await client.post("/cart/items", json=payload, headers=test_auth_header)
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) > 0
+        assert data["items"][0]["product_id"] == test_product.id
+        assert data["total_quantity"] == 2
+
+    async def test_update_cart_item(self, client, test_product, test_auth_header):
+
+        add_resp = await client.post("/cart/items", 
+                                     json={"product_id": test_product.id, "quantity": 1, "cart_id": 0}, 
+                                     headers=test_auth_header)
+
+        item_id = add_resp.json()["items"][0]["id"]
+
+        update_payload = {"quantity": 5}
+        response = await client.put(f"/cart/items/{item_id}", json=update_payload, headers=test_auth_header)
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["items"][0]["quantity"] == 5
+        assert data["total_price"] == test_product.price * 5
+
+    async def test_remove_item_from_cart(self, client, test_product, test_auth_header):
+        
+        add_resp = await client.post("/cart/items", 
+                                     json={"product_id": test_product.id, "quantity": 1, "cart_id": 0}, 
+                                     headers=test_auth_header)
+       
+        item_id = add_resp.json()["items"][0]["id"]
+
+        response = await client.delete(f"/cart/items/{item_id}", headers=test_auth_header)
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == 0
+
+    async def test_clear_cart(self, client, test_user, test_product, test_auth_header):
+
+        await client.post("/cart/items", 
+                          json={"product_id": test_product.id, "quantity": 3, "cart_id": 0}, 
+                          headers=test_auth_header)
+        
+        response = await client.delete("/cart/clear", headers=test_auth_header)
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["items"] == []
+        assert data["total_quantity"] == 0
+

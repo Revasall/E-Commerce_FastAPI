@@ -21,7 +21,7 @@ class User(Base):
     last_name: Mapped[str] = mapped_column(String)
     image: Mapped[str| None] = mapped_column(String, default=None)
 
-    carts = relationship('Cart', back_populates='user')
+    carts = relationship('Cart', back_populates='user', cascade='all, delete-orphan')
     orders = relationship('Order', back_populates='user')
 
     def __repr__(self):

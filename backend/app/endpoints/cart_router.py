@@ -34,9 +34,8 @@ async def remove_item(current_user: UserDep,
     
     return await service.remove_item(current_user.id, item_id)
 
-@router.delete('/', response_model=CartScheme)
+@router.delete('/clear', response_model=CartScheme)
 async def clear_cart(current_user: UserDep,
                      service: CartServiceDep):
     
     return await service.clear_cart(current_user.id)
-

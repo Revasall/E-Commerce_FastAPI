@@ -1,10 +1,10 @@
-import pytest_asyncio, pytest
-from datetime import datetime, timedelta
+import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from ..app.main import app
 from ..app.models.user import User, UserRole
+from ..app.models.cart import Cart, CartItem 
 from ..app.models import Base, Category, Product
 from ..app.database.database import get_session
 
@@ -181,6 +181,26 @@ async def test_product(session, test_category):
     if existing_product:
         try:
             await session.delete(product)
+            await session.commit()
+        except:
+            await session.rollback()
+
+
+
+@pytest_asyncio.fixture(scope='function')
+async def test_cart(session, test_user):
+    """Create one test cart for all tests"""
+    cart = Cart(user_id=test_user.id)
+    session.add(cart)
+    await session.commit()
+    await session.refresh(cart)
+    yield cart
+
+    # Очистка после теста
+    existing_cart = await session.get(Cart, cart.id)
+    if existing_cart:
+        try:
+            await session.delete(existing_cart)
             await session.commit()
         except:
             await session.rollback()

@@ -2,10 +2,13 @@ import pytest
 
 from backend.app.models.category import Category
 from backend.app.models.product import Product
+from backend.app.models.cart import Cart, CartItem 
 from backend.app.repository.category_repository import CategoryRepository
 from backend.app.repository.product_repository import ProductRepository
+from backend.app.repository.cart_repository import CartRepository
 from backend.app.schemas.category_sсheme import CategoryCreate, CategoryUpdate
 from backend.app.schemas.product_sсheme import ProductCreate, ProductUpdate
+from backend.app.schemas.cart_sсheme import CartItemCreate
 
 from ...app.repository.user_repository import UserRepository
 from ...app.models.user import User
@@ -232,3 +235,96 @@ class TestCategoryRepository:
 
         assert update_product.title == update_data.title
         assert bad_upd is None
+
+
+
+@pytest.mark.asyncio
+class TestCartRepository:
+
+    async def test_create_and_get_cart(self, session, test_user):
+        repo = CartRepository(db=session)
+        
+        # 1. Checking the creation of the cart
+        new_cart = await repo.create_cart(user_id=test_user.id)
+        assert isinstance(new_cart, Cart)
+        assert new_cart.user_id == test_user.id
+
+        # 2. Checking the receipt of a cart by user_id
+        found_cart = await repo.get_cart_by_user_id(test_user.id)
+        assert found_cart.id == new_cart.id
+
+    async def test_add_and_get_item(self, session, test_cart, test_product):
+        repo = CartRepository(db=session)
+        
+        item_data = CartItemCreate(
+            cart_id=test_cart.id,
+            product_id=test_product.id,
+            quantity=2,
+            image_url="test_url"
+        )
+
+        # 1. Adding item
+        item = await repo.add_item(item_data)
+        assert item.product_id == test_product.id
+        assert item.quantity == 2
+
+        # Getting a item from the cart (by cart_id and product_id)
+        found_item = await repo.get_item(test_cart.id, test_product.id)
+        assert found_item.id == item.id
+
+        # 3. Getting a item by ID
+        found_by_id = await repo.get_item_by_id(item.id)
+        assert found_by_id.id == item.id
+
+    async def test_update_item_quantity(self, session, test_cart, test_product):
+        repo = CartRepository(db=session)
+        
+        # Adding item 
+        item_data = CartItemCreate(cart_id=test_cart.id, product_id=test_product.id, quantity=1)
+        item = await repo.add_item(item_data)
+
+        # Updating quantity
+        updated_item = await repo.update_item_quantity(item.id, quantity=5)
+        assert updated_item.quantity == 5
+
+        # Check for a non-existent ID
+        bad_update = await repo.update_item_quantity(999, quantity=10)
+        assert bad_update is None
+
+    async def test_remove_item(self, session, test_cart, test_product):
+        repo = CartRepository(db=session)
+        
+        item_data = CartItemCreate(cart_id=test_cart.id, product_id=test_product.id, quantity=1)
+        item = await repo.add_item(item_data)
+
+        # Remove exisitng item
+        delete_res = await repo.remove_item(item.id)
+        assert delete_res is True
+
+        # Checking that the item is no longer available
+        check_item = await repo.get_item_by_id(item.id)
+        assert check_item is None
+
+        # Removing a non-existent product
+        bad_delete = await repo.remove_item(999)
+        assert bad_delete is False
+
+    async def test_clear_cart_and_get_items(self, session, test_cart, test_product):
+        repo = CartRepository(db=session)
+        
+        # Adding item in cart
+        item_data = CartItemCreate(cart_id=test_cart.id, product_id=test_product.id, quantity=1)
+        await repo.add_item(item_data)
+
+        # 1. Check that the list of all items in the shopping cart has been received
+        items = await repo.get_cart_items(test_cart.id)
+        assert len(items) == 1
+        assert isinstance(items[0], CartItem)
+
+        # 2. Clear cart
+        clear_res = await repo.clear_cart(test_cart.id)
+        assert clear_res is True
+
+        # Check that there are no items left
+        items_after = await repo.get_cart_items(test_cart.id)
+        assert len(items_after) == 0

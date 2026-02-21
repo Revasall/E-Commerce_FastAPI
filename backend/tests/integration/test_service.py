@@ -1,14 +1,15 @@
 import pytest
 
-from backend.app.models.category import Category
 from backend.app.models.user import User
+from backend.app.schemas.cart_sсheme import CartItemCreate, CartItemUpdate, CartScheme
 from backend.app.schemas.category_sсheme import CategoryCreate, CategoryRead, CategoryUpdate
 from backend.app.schemas.product_sсheme import ProductCreate, ProductRead, ProductUpdate
+from backend.app.schemas.user_sсheme import UserCreate, UserRead, UserUpdate
+from backend.app.services.cart_service import CartService
 from backend.app.services.product_service import ProductService
 from backend.app.services.user_service import UserService
 from backend.app.services.auth_service import AuthService
 from backend.app.services.category_service import CategoryService
-from backend.app.schemas.user_sсheme import UserCreate, UserRead, UserUpdate
 from backend.app.core.exceptions import InvalidCredentialsError, ObjectAlreadyExistsError, ObjectNotFoundError, InvalidTokenError
 
 
@@ -117,22 +118,21 @@ class TestAuthService:
 
         auth_serv = AuthService(session)
 
-        email = 'john_doe@test.com'
         password = '123'
 
-        auth_user = await auth_serv.autenticate_user(email,password)
+        auth_user = await auth_serv.autenticate_user(test_user.email ,password)
         assert auth_user.email == test_user.email
 
         with pytest.raises(InvalidCredentialsError) as err_auth:
-            await auth_serv.autenticate_user(email,'bad_pass')
+            await auth_serv.autenticate_user(test_user.email ,'bad_pass')
         assert err_auth.value.status_code == 401
         
-        token_data = await auth_serv.login_for_token(email,password)
+        token_data = await auth_serv.login_for_token(test_user.email ,password)
         assert token_data.access_token is not None
         assert token_data.refresh_token is not None
 
         with pytest.raises(InvalidCredentialsError) as err_auth:
-            await auth_serv.login_for_token(email,'bad_pass')
+            await auth_serv.login_for_token(test_user.email ,'bad_pass')
         assert err_auth.value.status_code == 401
 
         
@@ -140,13 +140,12 @@ class TestAuthService:
 
         auth_serv = AuthService(session)
 
-        email = 'john_doe@test.com'
         password = '123'
-        token_data = await auth_serv.login_for_token(email,password)
+        token_data = await auth_serv.login_for_token(test_user.email ,password)
 
         good_user = await auth_serv.get_current_user(token_data.access_token)
         assert isinstance(good_user, UserRead)
-        assert good_user.id == test_user.id and  good_user.email == email
+        assert good_user.id == test_user.id and  good_user.email == test_user.email 
 
         with pytest.raises(InvalidTokenError) as err_token:
             await auth_serv.get_current_user('123')
@@ -156,9 +155,8 @@ class TestAuthService:
 
         auth_serv = AuthService(session)
 
-        email = 'john_doe@test.com'
         password = '123'
-        old_tokens = await auth_serv.login_for_token(email,password)
+        old_tokens = await auth_serv.login_for_token(test_user.email ,password)
 
         token_data = await auth_serv.refresh_access_token(old_tokens.refresh_token)
         assert token_data.access_token is not None
@@ -325,4 +323,117 @@ class TestProductService:
         with pytest.raises(ObjectNotFoundError) as err_id:
             await product_ser.update_product(99, ProductUpdate(title='new_title'))
         assert err_id.value.status_code == 404
+
+
+
+@pytest.mark.asyncio
+class TestCartService:
+
+    async def test_create_cart(self, session, test_user):
+        """Check: If the cart doesn't exist, the service creates it."""
+        cart_serv = CartService(session)
+
+        cart = await cart_serv.get_cart(test_user.id)
+        assert isinstance(cart, CartScheme)
+        assert cart.user_id == test_user.id
+        assert isinstance(cart.items, list) and len(cart.items)==0
+        assert cart.total_price == 0
+
+    async def test_add_item_to_cart(self, session, test_user, test_product):
+        """Check: if a new product has been added and recalculating the cart"""
+        cart_serv = CartService(session)
+
+        item_data = CartItemCreate(
+            cart_id=0,
+            product_id=test_product.id,
+            quantity=2,
+            image_url=test_product.image
+        )
+
+        cart_res = await cart_serv.add_item(test_user.id, item_data)
+        assert len(cart_res.items) == 1
+        assert cart_res.items[0].product_id == test_product.id
+        assert cart_res.items[0].quantity == 2
+        assert cart_res.total_quantity == 2
+        assert cart_res.total_price == test_product.price * 2
+
+        item_data.product_id= 999
+        with pytest.raises(ObjectNotFoundError) as err_product:
+            await cart_serv.add_item(test_user.id, item_data)
+        assert err_product.value.status_code == 404
+
+    async def test_add_item_increment_quantity(self, session, test_user, test_product):
+        """Check: If the item is already in the cart, the quantity is increased."""        
+        cart_ser = CartService(session)
+        
+        item_data = CartItemCreate(
+            cart_id=0,
+            product_id=test_product.id, 
+            quantity=1, 
+            )
+
+
+        await cart_ser.add_item(test_user.id, item_data)
+
+        cart_res = await cart_ser.add_item(test_user.id, item_data)
+        assert len(cart_res.items) == 1
+        assert cart_res.items[0].quantity == 2
+        assert cart_res.total_quantity == 2
+
+    async def test_update_item_quantity(self, session, test_user, test_product, test_cart):
+        """Check: updating the quantity of an existing product"""
+        cart_ser = CartService(session)
+        
+        item_data = CartItemCreate(product_id=test_product.id, 
+                                   quantity=1, 
+                                   cart_id=test_cart.id)
+        
+        initial_cart = await cart_ser.add_item(test_user.id, item_data)        
+
+        update_data = CartItemUpdate(quantity=10)
+        updated_cart = await cart_ser.update_item(test_user.id, initial_cart.id, update_data)
+        assert updated_cart.items[0].quantity == 10
+        assert updated_cart.total_price == test_product.price * 10
+
+        with pytest.raises(ObjectNotFoundError) as err_item:
+            await cart_ser.update_item(test_user.id, 999, update_data)
+        assert err_item.value.status_code == 404
+
+    async def test_remove_item(self, session, test_user, test_product, test_cart):
+        """Checking if an item has been removed from the cart"""
+        cart_ser = CartService(session)
+        
+        item_data = CartItemCreate(product_id=test_product.id, 
+                                   quantity=1, 
+                                   cart_id=test_cart.id)
+
+        new_cart = await cart_ser.add_item(test_user.id, item_data)
+        item = new_cart.items[0]
+
+        cart_res = await cart_ser.remove_item(test_user.id, item.id)
+        assert len(cart_res.items) == 0
+        assert cart_res.total_price == 0
+
+        with pytest.raises(ObjectNotFoundError) as err_item:
+            await cart_ser.remove_item(test_user.id, 999)
+        assert err_item.value.status_code == 404
+
+
+    async def test_clear_cart(self, session, test_user, test_product, test_cart):
+        """Checking clear cart"""
+        cart_ser = CartService(session)
+        
+        item_data = CartItemCreate(product_id=test_product.id, 
+                                   quantity=1, 
+                                   cart_id=test_cart.id)
+        
+        await cart_ser.add_item(test_user.id, item_data)
+        
+        cart_res = await cart_ser.clear_cart(test_user.id)
+        assert len(cart_res.items) == 0
+        assert cart_res.total_quantity == 0
+
+        with pytest.raises(ObjectNotFoundError) as err_clear:
+            await cart_ser.clear_cart(test_user.id)
+        assert err_clear.value.status_code == 404
 
