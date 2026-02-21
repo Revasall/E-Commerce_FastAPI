@@ -4,7 +4,6 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 
 
-
 def ensure_exists(obj: Any, 
                   entity_name:str, 
                   exception: Any, 

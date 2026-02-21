@@ -1,5 +1,5 @@
 from typing import List
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
@@ -41,7 +41,7 @@ class CartRepository:
     async def update_item_quantity(self, item_id:int, quantity:int) -> CartItem|None:
         item = await self.get_item_by_id(item_id=item_id)
         if item:
-            item.quantity == quantity
+            item.quantity = quantity
             await self.db.commit()
             await self.db.refresh(item)
         return item 
@@ -55,9 +55,10 @@ class CartRepository:
         return False
     
     async def clear_cart(self, cart_id:int) -> bool:
-        await self.db.execute(update(CartItem).where(CartItem.cart_id == cart_id).values(quantity=0))
+        result = await self.db.execute(delete(CartItem).where(CartItem.cart_id == cart_id))
         await self.db.commit()
-        return True
+        
+        return result.rowcount > 0
 
     async def get_cart_items(self, cart_id: int) -> List[CartItem]:
         result = await self.db.execute(select(CartItem).where(CartItem.cart_id==cart_id))
