@@ -1,4 +1,6 @@
 
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 
@@ -7,13 +9,13 @@ from ..models.order import OrderStatus
 
 
 class OrderItemBase(BaseModel):
-    product_name: str = Field(max_length=30)
-    price: float = Field(gt=0)
-    quantity: int = Field(gt=1)
+    product_id: int
+    product_name: str 
+    price: float = Field(ge=0)
+    quantity: int = Field(ge=1)
 
 class OrderItemCreate(OrderItemBase):
-    order_id: int
-    product_id: int
+    ...
 
 class OrderItemRead(OrderItemBase):
     id: int
@@ -24,10 +26,12 @@ class OrderItemRead(OrderItemBase):
 
 class OrderBase(BaseModel):
     user_id: int
-    status: OrderStatus = OrderStatus.PENDING
+    status: OrderStatus = OrderStatus.CREATED
 
-    total_quantity: int
-    total_price: float = Field(gt=0)
+    total_quantity: int = Field(ge=0)
+    total_price: float = Field(ge=0)
+
+    items: list[OrderItemCreate]
 
 class OrderCreate(OrderBase):
     ...
@@ -35,9 +39,16 @@ class OrderCreate(OrderBase):
 class OrderRead(OrderBase):
     id: int
     created_at: datetime
-    items: list[OrderItemRead]
 
+    external_id: str|None = None
+    paid_at: datetime |None = None
     model_config = ConfigDict(from_attributes=True)
 
 class OrderUpdate(BaseModel):
     status: OrderStatus | None = None 
+    external_id: str|None = None
+    payment_details: dict[str, Any] | None = None
+
+    paid_at: datetime |None = datetime.now()
+
+

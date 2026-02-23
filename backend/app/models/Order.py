@@ -1,14 +1,14 @@
 from enum import Enum
 from datetime import datetime
-from sqlalchemy import CheckConstraint, String, Integer, ForeignKey, Float, DateTime, Enum as SQLEnum, func
+from typing import Dict
+from sqlalchemy import JSON, CheckConstraint, String, Integer, ForeignKey, Float, DateTime, Enum as SQLEnum, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from ..models.base import Base
 
 class OrderStatus(str, Enum):
-    PENDING = 'pending'
+    CREATED = 'created'
     PAID = 'paid'
-    SHIPPED = 'shipped'
-    DELIVERED = 'delivered'
+    FAILED = 'failed'
     CANCELLED = 'cancelled'
 
 
@@ -18,11 +18,16 @@ class Order(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False)
-    status: Mapped[OrderStatus] = mapped_column(SQLEnum(OrderStatus), default=OrderStatus.PENDING, nullable=False)
+    status: Mapped[OrderStatus] = mapped_column(SQLEnum(OrderStatus), default=OrderStatus.CREATED, nullable=False)
 
-    total_quantity: Mapped[int] = mapped_column(Integer, nullable=False ) #Дадаць абмежаванаць ад больш 0 
+    total_quantity: Mapped[int] = mapped_column(Integer, nullable=False) #Дадаць абмежаванаць ад больш 0 
     total_price: Mapped[float] = mapped_column(Float(precision=2), nullable=False) #Дадаць абмежаванаць ад больш 0
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now()) 
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    #payments info
+    external_id: Mapped[int | None] = mapped_column(Integer, default=None)
+    payments_details: Mapped[dict|None] = mapped_column(JSON, default=None)
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
 
     user = relationship('User', back_populates='orders')
     items = relationship('OrderItem', back_populates='order', cascade='all, delete-orphan')

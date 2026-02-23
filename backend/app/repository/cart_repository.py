@@ -1,11 +1,9 @@
 from typing import List
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
 
 from ..models.cart import Cart, CartItem
 from ..schemas.cart_sсheme import CartItemCreate
-from ..core.exceptions import ObjectAlreadyExistsError
 
 class CartRepository:
 
