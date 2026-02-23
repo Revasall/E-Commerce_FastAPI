@@ -20,13 +20,13 @@ class Order(Base):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False)
     status: Mapped[OrderStatus] = mapped_column(SQLEnum(OrderStatus), default=OrderStatus.CREATED, nullable=False)
 
-    total_quantity: Mapped[int] = mapped_column(Integer, nullable=False) #Дадаць абмежаванаць ад больш 0 
-    total_price: Mapped[float] = mapped_column(Float(precision=2), nullable=False) #Дадаць абмежаванаць ад больш 0
+    total_quantity: Mapped[int] = mapped_column(Integer, nullable=False) 
+    total_price: Mapped[float] = mapped_column(Float(precision=2), nullable=False) 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     #payments info
     external_id: Mapped[int | None] = mapped_column(Integer, default=None)
-    payments_details: Mapped[dict|None] = mapped_column(JSON, default=None)
+    payment_details: Mapped[dict|None] = mapped_column(JSON, default=None)
     paid_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
 
     user = relationship('User', back_populates='orders')

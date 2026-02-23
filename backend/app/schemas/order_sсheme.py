@@ -19,7 +19,6 @@ class OrderItemCreate(OrderItemBase):
 
 class OrderItemRead(OrderItemBase):
     id: int
-    product_id: int
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -40,8 +39,9 @@ class OrderRead(OrderBase):
     id: int
     created_at: datetime
 
-    external_id: str|None = None
+    external_id: int|None = None
     paid_at: datetime |None = None
+    
     model_config = ConfigDict(from_attributes=True)
 
 class OrderUpdate(BaseModel):
@@ -49,6 +49,6 @@ class OrderUpdate(BaseModel):
     external_id: str|None = None
     payment_details: dict[str, Any] | None = None
 
-    paid_at: datetime |None = datetime.now()
+    paid_at: datetime |None = None
 
 
