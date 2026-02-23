@@ -13,6 +13,7 @@ class OrderItemBase(BaseModel):
     product_name: str 
     price: float = Field(ge=0)
     quantity: int = Field(ge=1)
+    result_price: float
 
 class OrderItemCreate(OrderItemBase):
     ...

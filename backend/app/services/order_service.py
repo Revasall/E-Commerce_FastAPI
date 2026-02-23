@@ -1,0 +1,123 @@
+from datetime import datetime
+
+from fastapi import Depends
+from typing import Annotated, Any, List
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.app.models.order import Order, OrderStatus
+from backend.app.repository.order_repository import OrderRepository
+from backend.app.repository.cart_repository import CartRepository
+from backend.app.services.cart_service import CartService
+
+from ..schemas.cart_sсheme import CartItemCreate, CartItemRead, CartItemUpdate, CartScheme
+from ..schemas.order_sсheme import OrderCreate, OrderItemCreate, OrderItemRead, OrderRead, OrderUpdate
+
+from ..core.exceptions import ObjectNotFoundError, ObjectCreateError
+from ..database.database import SessionDep
+from ..core.utils import ensure_exists
+
+class OrderService:
+    def __init__(self, db: AsyncSession):
+        self.repository = OrderRepository(db)
+        self.cart_service = CartService(db)
+
+    async def _build_order_response(self, order: Order|None) -> OrderRead:
+
+        if not order:
+            raise ObjectNotFoundError('Order')
+        order_read = OrderRead.model_validate(order)
+    
+        items = await self.repository.get_order_items(order.id)
+        if items == []:
+            raise ObjectNotFoundError('Items') 
+        items_read = [OrderItemRead.model_validate(item) for item in items]
+        order_read.items = items_read
+
+        return order_read
+    
+    async def create_order(self, user_id: int) -> OrderRead:
+        cart = await self.cart_service.get_cart(user_id)
+        if not cart:
+            raise ObjectNotFoundError('Cart')
+        
+        items = [
+            OrderItemCreate(
+                product_id=item.product_id,
+                product_name=item.product_title,
+                price=item.price,
+                quantity=item.quantity,
+                result_price=item.total_price
+            ) for item in cart.items]
+        if len(items) == 0:
+            raise ObjectNotFoundError('Items')
+
+        order = OrderCreate(
+            user_id = user_id,
+            total_quantity=cart.total_quantity,
+            total_price=cart.total_price,
+            items=items
+        )
+
+        order = await self.repository.create_order(order)
+        if not order:
+            raise ObjectCreateError
+        
+        await self.cart_service.clear_cart(user_id)
+        
+        return await self._build_order_response(order)
+    
+    async def get_all_orders(self, user_id:int) -> List[OrderRead]:
+        result = await self.repository.get_all_orders_by_user_id(user_id)
+        
+        return ensure_exists(
+            result,
+            'Orders',
+            ObjectNotFoundError,
+            OrderRead
+        )
+    
+    async def get_order_by_id(self, order_id: int):
+        order = await self.repository.get_order_by_id(order_id)
+
+
+        return await self._build_order_response(order)
+    
+    # async def update_order_status(self, order_id: int, order_status: OrderStatus) -> OrderRead:
+    #     order_update_data = OrderUpdate(status=order_status)
+    #     order = await self.repository.update_order(order_id, order_update_data)
+
+    #     return await self._build_order_response(order)
+    
+    async def order_payment_update(self, 
+                                   order_id:int,
+                                   external_id: str,
+                                   payment_details: dict[str, Any]) -> OrderRead:
+        
+        order_update_data = OrderUpdate(
+            status=OrderStatus.PAID,
+            external_id=external_id,
+            payment_details=payment_details,
+            paid_at=datetime.now(datetime.timezone.utc)
+        )
+
+        order = await self.repository.update_order(order_id, order_update_data)
+
+        return await self._build_order_response(order)
+    
+    async def order_failed_update(self, order_id: int) -> OrderRead:
+        order_update_data = OrderUpdate(status=OrderStatus.FAILED)
+        order = await self.repository.update_order(order_id, order_update_data)
+
+        return await self._build_order_response(order)
+    
+    async def order_cancelled_update(self, order_id: int) -> OrderRead:
+        order_update_data = OrderUpdate(status=OrderStatus.CANCELLED)
+        order = await self.repository.update_order(order_id, order_update_data)
+
+        return await self._build_order_response(order)
+
+
+def get_order_service(session: SessionDep):
+    return OrderService(session)
+
+OrderServiceDep = Annotated[OrderService, Depends(get_order_service)]

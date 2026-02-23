@@ -22,7 +22,8 @@ class OrderRepository:
                 product_id = item.product_id,
                 product_name = item.product_name,
                 price = item.price,
-                quantity = item.quantity
+                quantity = item.quantity,
+                result_prcie = item.result_price
                 ) for item in order_data.items
                 ]
     
@@ -60,7 +61,7 @@ class OrderRepository:
     async def update_order(self, order_id: int, update_data: OrderUpdate) -> Order | None:
         order = await self.db.scalar(select(Order).where(Order.id == order_id))
         if order:
-            for key, value in update_data.model_dump(exclude_none=True):
+            for key, value in update_data.model_dump(exclude_none=True).items():
                 if value:
                     setattr(order, key, value)
             await self.db.commit()

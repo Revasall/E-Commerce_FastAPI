@@ -16,6 +16,13 @@ class ObjectAlreadyExistsError(HTTPException):
             detail=f'{object_name} already exists'
         )
 
+class ObjectCreateError(HTTPException):
+    def __init__(self, object_name: str = 'Object'):
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f'{object_name} create error'
+        )
+
 class PermissionDeniedError(HTTPException):
     def __init__(self, message: str = "You don't have permission to perform this action."):
         super().__init__(

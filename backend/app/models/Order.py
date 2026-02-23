@@ -49,6 +49,7 @@ class OrderItem(Base):
     product_name: Mapped[str] = mapped_column(String, nullable=False)
     price: Mapped[float] = mapped_column(Float(precision=2), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    result_price: Mapped[float] = mapped_column(Float, nullable=False)
 
     order = relationship('Order', back_populates='items')
     product = relationship('Product')
