@@ -31,16 +31,18 @@ class OrderBase(BaseModel):
     total_quantity: int = Field(ge=0)
     total_price: float = Field(ge=0)
 
-    items: list[OrderItemCreate]
 
 class OrderCreate(OrderBase):
-    ...
+    items: list[OrderItemCreate]
 
 class OrderRead(OrderBase):
     id: int
+    items: list[OrderItemRead] = []
+
     created_at: datetime
 
-    external_id: int|None = None
+    external_id: str|None = None
+    payment_details: dict[str, Any] | None = None
     paid_at: datetime |None = None
     
     model_config = ConfigDict(from_attributes=True)

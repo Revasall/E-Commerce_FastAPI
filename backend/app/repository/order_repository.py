@@ -2,6 +2,7 @@ from typing import List
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
 
 from ..models.order import Order, OrderItem
 from ..schemas.order_sсheme import OrderCreate, OrderUpdate
@@ -42,7 +43,10 @@ class OrderRepository:
         return list(result.scalars().all())
     
     async def get_order_by_id(self, order_id: int) -> Order | None:
-        order = await self.db.scalar(select(Order).where(Order.id == order_id))
+        order = await self.db.scalar(
+            select(Order)
+            .where(Order.id == order_id)
+            .options(selectinload(Order.items)))
         return order
     
     async def get_order_items(self, order_id: int) -> List[OrderItem]:
@@ -61,9 +65,8 @@ class OrderRepository:
     async def update_order(self, order_id: int, update_data: OrderUpdate) -> Order | None:
         order = await self.db.scalar(select(Order).where(Order.id == order_id))
         if order:
-            for key, value in update_data.model_dump(exclude_none=True).items():
-                if value:
-                    setattr(order, key, value)
+            for key, value in update_data.model_dump(exclude_unset=True).items():
+                setattr(order, key, value)
             await self.db.commit()
             await self.db.refresh(order)
 

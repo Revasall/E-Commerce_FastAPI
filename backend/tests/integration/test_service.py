@@ -1,15 +1,24 @@
 import pytest
+from datetime import datetime, timezone
 
 from backend.app.models.user import User
-from backend.app.schemas.cart_sсheme import CartItemCreate, CartItemUpdate, CartScheme
-from backend.app.schemas.category_sсheme import CategoryCreate, CategoryRead, CategoryUpdate
-from backend.app.schemas.product_sсheme import ProductCreate, ProductRead, ProductUpdate
 from backend.app.schemas.user_sсheme import UserCreate, UserRead, UserUpdate
-from backend.app.services.cart_service import CartService
-from backend.app.services.product_service import ProductService
 from backend.app.services.user_service import UserService
 from backend.app.services.auth_service import AuthService
+
+from backend.app.schemas.cart_sсheme import CartItemCreate, CartItemUpdate, CartScheme
+from backend.app.services.cart_service import CartService
+
+from backend.app.schemas.category_sсheme import CategoryCreate, CategoryRead, CategoryUpdate
 from backend.app.services.category_service import CategoryService
+
+from backend.app.schemas.product_sсheme import ProductCreate, ProductRead, ProductUpdate
+from backend.app.services.product_service import ProductService
+
+from backend.app.services.order_service import OrderService
+from backend.app.schemas.order_sсheme import OrderRead
+from backend.app.models.order import OrderStatus
+
 from backend.app.core.exceptions import InvalidCredentialsError, ObjectAlreadyExistsError, ObjectNotFoundError, InvalidTokenError
 
 
@@ -437,3 +446,102 @@ class TestCartService:
             await cart_ser.clear_cart(test_user.id)
         assert err_clear.value.status_code == 404
 
+@pytest.mark.asyncio
+class TestOrderService:
+
+    async def test_create_order_success(self, session, test_user, test_cart_item):
+        order_ser = OrderService(session)
+        
+        #1 Create an order based on cart fixtures
+        order = await order_ser.create_order(test_user.id)
+        
+        # Checking the created order
+        assert isinstance(order, OrderRead)
+        assert order.user_id == test_user.id
+        assert order.total_quantity == test_cart_item.quantity
+        assert order.total_price == test_cart_item.price * test_cart_item.quantity  # Добавлено: проверка total_price
+        assert len(order.items) == 1
+        assert order.items[0].product_name == test_cart_item.product_title
+        
+        #2 Check that the service has caused the trash to be cleared.
+        cart_after = await order_ser.cart_service.get_cart(test_user.id)
+        assert len(cart_after.items) == 0
+
+    async def test_create_order_empty_cart(self, session, test_user, test_cart):
+        """Checking for an error when trying to create an order from an empty cart"""
+        order_ser = OrderService(session)
+        
+        # Make sure the cart is empty (the test_cart fixture creates an empty cart with no items)
+        with pytest.raises(ObjectNotFoundError) as exc:
+            await order_ser.create_order(test_user.id)
+        assert "Items" in exc.value.args[0]
+
+    async def test_get_all_orders(self, session, test_user, test_order):
+        """Checking whether a list of all user orders has been received"""
+        order_ser = OrderService(session)
+        
+        orders = await order_ser.get_all_orders(test_user.id)
+        
+        assert isinstance(orders, list)
+        assert len(orders) >= 1
+        assert orders[0].user_id == test_user.id
+
+        with pytest.raises(ObjectNotFoundError) as err_ord_lst:
+            await order_ser.get_all_orders(999)
+        assert err_ord_lst.value.status_code==404
+
+    async def test_get_order_by_id(self, session, test_order):
+        """Checking receipt of an order by ID and receiving a non-existent order"""
+        order_ser = OrderService(session)
+
+        order = await order_ser.get_order_by_id(test_order.id)
+        assert order.id == test_order.id
+        assert isinstance(order, OrderRead)
+
+        with pytest.raises(ObjectNotFoundError) as err_ord_id:
+            await order_ser.get_order_by_id(999)
+        assert err_ord_id.value.status_code==404
+        
+    async def test_order_payment_update(self, session, test_order):
+        """Checking whether an order has transitioned to PAID status and whether payment information has been saved"""
+        order_ser = OrderService(session)
+        
+        external_id = "ROBO-TRANS-999"
+        payment_info = {"bank": "Sber", "type": "card"}
+        
+        updated_order = await order_ser.order_payment_update(
+            order_id=test_order.id,
+            external_id=external_id,
+            payment_details=payment_info
+        )
+        
+        assert updated_order.status == OrderStatus.PAID
+        assert updated_order.external_id == external_id
+
+    async def test_order_payment_update_not_found(self, session):
+        """Checking payment update for a non-existent order"""
+        order_ser = OrderService(session)
+        
+        external_id = "ROBO-TRANS-999"
+        payment_info = {"bank": "Sber", "type": "card"}
+        
+        with pytest.raises(ObjectNotFoundError) as err:
+            await order_ser.order_payment_update(
+                order_id=999,
+                external_id=external_id,
+                payment_details=payment_info
+            )
+        assert err.value.status_code == 404
+
+
+    async def test_order_update_status(self, session, test_order):
+        """Checking methods for transferring an order to a canceled or erroneous status"""
+        order_ser = OrderService(session)
+        
+        # Test FAILED
+        failed_order = await order_ser.order_failed_update(test_order.id)
+        assert failed_order.status == OrderStatus.FAILED
+        
+        # Test CANCELLED
+        cancelled_order = await order_ser.order_cancelled_update(test_order.id)
+        assert cancelled_order.status == OrderStatus.CANCELLED

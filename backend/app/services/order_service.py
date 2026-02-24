@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import Depends
 from typing import Annotated, Any, List
@@ -22,18 +22,23 @@ class OrderService:
         self.cart_service = CartService(db)
 
     async def _build_order_response(self, order: Order|None) -> OrderRead:
-
         if not order:
             raise ObjectNotFoundError('Order')
-        order_read = OrderRead.model_validate(order)
-    
+        
         items = await self.repository.get_order_items(order.id)
-        if items == []:
-            raise ObjectNotFoundError('Items') 
         items_read = [OrderItemRead.model_validate(item) for item in items]
-        order_read.items = items_read
 
-        return order_read
+        return OrderRead(
+            id=order.id,
+            user_id=order.user_id,
+            status=order.status,
+            total_quantity=order.total_quantity,
+            total_price=order.total_price,
+            created_at=order.created_at,
+            items=items_read,
+            external_id=order.external_id,
+            paid_at=order.paid_at
+            )
     
     async def create_order(self, user_id: int) -> OrderRead:
         cart = await self.cart_service.get_cart(user_id)
@@ -69,17 +74,30 @@ class OrderService:
     async def get_all_orders(self, user_id:int) -> List[OrderRead]:
         result = await self.repository.get_all_orders_by_user_id(user_id)
         
-        return ensure_exists(
-            result,
-            'Orders',
-            ObjectNotFoundError,
-            OrderRead
-        )
+        if result == []:
+            raise ObjectNotFoundError('Orders')
+        
+        orders_list = []
+        for order in result:
+            read_order = OrderRead(
+            id=order.id,
+            user_id=order.user_id,
+            status=order.status,
+            total_quantity=order.total_quantity,
+            total_price=order.total_price,
+            created_at=order.created_at,
+            items=[],
+            external_id=order.external_id,
+            paid_at=order.paid_at
+            )
+            orders_list.append(read_order)
+        
+        return orders_list 
+
     
     async def get_order_by_id(self, order_id: int):
         order = await self.repository.get_order_by_id(order_id)
-
-
+        
         return await self._build_order_response(order)
     
     # async def update_order_status(self, order_id: int, order_status: OrderStatus) -> OrderRead:
@@ -97,7 +115,7 @@ class OrderService:
             status=OrderStatus.PAID,
             external_id=external_id,
             payment_details=payment_details,
-            paid_at=datetime.now(datetime.timezone.utc)
+            paid_at=datetime.now(timezone.utc)
         )
 
         order = await self.repository.update_order(order_id, order_update_data)

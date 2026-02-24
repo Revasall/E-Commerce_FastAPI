@@ -25,7 +25,7 @@ class Order(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     #payments info
-    external_id: Mapped[int | None] = mapped_column(Integer, default=None)
+    external_id: Mapped[str | None] = mapped_column(String, default=None)
     payment_details: Mapped[dict|None] = mapped_column(JSON, default=None)
     paid_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
 

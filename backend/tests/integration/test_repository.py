@@ -14,7 +14,7 @@ from backend.app.schemas.cart_sсheme import CartItemCreate
 
 from backend.app.repository.order_repository import OrderRepository
 from backend.app.schemas.order_sсheme import OrderCreate, OrderItemCreate, OrderUpdate
-from backend.app.models.order import Order, OrderItem, OrderStatus
+from backend.app.models.order import OrderStatus
 
 from ...app.repository.user_repository import UserRepository
 from ...app.models.user import User
