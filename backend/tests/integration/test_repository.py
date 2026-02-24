@@ -1,14 +1,20 @@
 import pytest
 
-from backend.app.models.category import Category
-from backend.app.models.product import Product
-from backend.app.models.cart import Cart, CartItem 
 from backend.app.repository.category_repository import CategoryRepository
-from backend.app.repository.product_repository import ProductRepository
-from backend.app.repository.cart_repository import CartRepository
 from backend.app.schemas.category_sсheme import CategoryCreate, CategoryUpdate
+from backend.app.models.category import Category
+
+from backend.app.repository.product_repository import ProductRepository
 from backend.app.schemas.product_sсheme import ProductCreate, ProductUpdate
+from backend.app.models.product import Product
+
+from backend.app.models.cart import Cart, CartItem 
+from backend.app.repository.cart_repository import CartRepository
 from backend.app.schemas.cart_sсheme import CartItemCreate
+
+from backend.app.repository.order_repository import OrderRepository
+from backend.app.schemas.order_sсheme import OrderCreate, OrderItemCreate, OrderUpdate
+from backend.app.models.order import Order, OrderItem, OrderStatus
 
 from ...app.repository.user_repository import UserRepository
 from ...app.models.user import User
@@ -328,3 +334,87 @@ class TestCartRepository:
         # Check that there are no items left
         items_after = await repo.get_cart_items(test_cart.id)
         assert len(items_after) == 0
+
+
+@pytest.mark.asyncio
+class TestOrderRepository:
+
+    async def test_create_order(self, session, test_user, test_product):
+        repo = OrderRepository(db=session)
+        
+        order_item = OrderItemCreate(
+            product_id=test_product.id,
+            product_name=test_product.title,
+            price=test_product.price,
+            quantity=2,
+            result_price=test_product.price * 2
+        )
+        
+        order_data = OrderCreate(
+            user_id=test_user.id,
+            total_quantity=2,
+            total_price=test_product.price * 2,
+            items=[order_item]
+        )
+
+        order = await repo.create_order(order_data)
+        order_items = await repo.get_order_items(order.id)
+        
+        assert order.id is not None
+        assert order.user_id == test_user.id
+        assert len(order_items) == 1
+        assert order_items[0].product_name == test_product.title
+
+
+    async def test_get_orders_by_user_id(self, session, test_user, test_order):
+        repo = OrderRepository(db=session)
+        
+        orders = await repo.get_all_orders_by_user_id(test_user.id)
+        
+        assert isinstance(orders, list)
+        assert len(orders) >= 1
+        assert orders[0].user_id == test_user.id
+
+    async def test_get_item_by_id(self, session, test_order, test_product):
+        repo = OrderRepository(db=session)
+        
+        items = await repo.get_order_items(test_order.id)
+        item = await repo.get_item_by_id(items[0].id)
+        assert item.id == items[0].id
+
+        not_found = await repo.get_item_by_id(999)
+        assert not_found is None
+
+    async def test_get_order_by_id(self, session, test_user, test_order):
+        repo = OrderRepository(db=session)
+
+        order = await repo.get_order_by_id(test_order.id)
+        assert order.id == test_order.id
+        
+        not_found = await repo.get_order_by_id(999)
+        assert not_found is None
+
+    async def test_update_order_full(self, session, test_order):
+        repo = OrderRepository(db=session)
+        
+        update_info = OrderUpdate(
+            status=OrderStatus.PAID,
+            external_id="PAY-12345",
+            payment_details={"method": "card"},
+            paid_at="2023-01-01T00:00:00"  # Пример даты
+        )
+        updated_order = await repo.update_order(test_order.id, update_info)
+        
+        assert updated_order.status == OrderStatus.PAID
+        assert updated_order.external_id == "PAY-12345"
+        assert updated_order.payment_details == {"method": "card"}
+
+        bad_update = await repo.update_order(999, update_info)
+        assert bad_update is None
+
+    async def test_get_item(self, session, test_user, test_order, test_product):
+        repo = OrderRepository(db=session)
+        
+        item = await repo.get_item(test_order.id, test_product.id)
+        assert item is not None
+        assert item.product_name == test_product.title

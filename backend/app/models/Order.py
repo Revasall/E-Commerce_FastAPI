@@ -17,7 +17,7 @@ class Order(Base):
     __tablename__ = 'orders'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False)
+    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('users.id'), nullable=True)
     status: Mapped[OrderStatus] = mapped_column(SQLEnum(OrderStatus), default=OrderStatus.CREATED, nullable=False)
 
     total_quantity: Mapped[int] = mapped_column(Integer, nullable=False) 

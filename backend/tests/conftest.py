@@ -2,6 +2,9 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+from backend.app.models.order import Order, OrderItem
+
+
 from ..app.main import app
 from ..app.models.user import User, UserRole
 from ..app.models.cart import Cart, CartItem 
@@ -196,7 +199,6 @@ async def test_cart(session, test_user):
     await session.refresh(cart)
     yield cart
 
-    # Очистка после теста
     existing_cart = await session.get(Cart, cart.id)
     if existing_cart:
         try:
@@ -205,4 +207,66 @@ async def test_cart(session, test_user):
         except:
             await session.rollback()
 
+@pytest_asyncio.fixture(scope='function')
+async def test_cart_item(session, test_cart,test_product):
+    """Create one test item for cart"""
+    item= CartItem(
+            cart_id=test_cart.id,
+            product_id=test_product.id,
+            quantity=2,
+            image_url="test_url"
+        )
+    
+    session.add(item)
+    await session.commit()
+    await session.refresh(item)
+    yield item
+
+    existing_cart_item = await session.get(CartItem, item.id)
+    if existing_cart_item:
+        try:
+            await session.delete(existing_cart_item)
+            await session.commit()
+        except:
+            await session.rollback()
+
+
+@pytest_asyncio.fixture(scope='function')
+async def test_order(session, test_user, test_product, test_cart, test_cart_item):
+    """Create test order and test item"""
+        
+    order = Order(
+        user_id = test_cart.user_id,
+        total_quantity=test_cart_item.quantity,
+        total_price=test_cart_item.price*test_cart_item.quantity,
+        )
+    session.add(order)
+    await session.flush()
+
+    items = [
+        OrderItem(
+            order_id = order.id,
+            product_id=test_cart_item.product_id,
+            product_name=test_cart_item.product_title,
+            price=test_cart_item.price,
+            quantity=test_cart_item.quantity,
+            result_price=test_cart_item.price*test_cart_item.quantity
+        )]
+
+
+
+    
+    session.add_all(items)
+    await session.commit()
+    await session.refresh(order)
+    
+    yield order
+
+    existing_order = await session.get(Order, order.id)
+    if existing_order:
+        try:
+            await session.delete(order)
+            await session.commit()
+        except:
+            await session.rollback()
 

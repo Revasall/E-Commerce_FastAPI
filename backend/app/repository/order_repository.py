@@ -23,7 +23,7 @@ class OrderRepository:
                 product_name = item.product_name,
                 price = item.price,
                 quantity = item.quantity,
-                result_prcie = item.result_price
+                result_price = item.result_price
                 ) for item in order_data.items
                 ]
     
