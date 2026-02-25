@@ -6,11 +6,10 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from ..models.base import Base
 
 class OrderStatus(str, Enum):
-    CREATED = 'created'
-    PAID = 'paid'
-    FAILED = 'failed'
-    CANCELLED = 'cancelled'
-
+    CREATED = 'CREATED'  
+    PAID = 'PAID'        
+    FAILED = 'FAILED'    
+    CANCELLED = 'CANCELLED'
 
 
 class Order(Base):

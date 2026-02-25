@@ -1,6 +1,7 @@
 from typing import List
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ..models.cart import Cart, CartItem
 from ..schemas.cart_sсheme import CartItemCreate
@@ -59,5 +60,5 @@ class CartRepository:
         return result.rowcount > 0
 
     async def get_cart_items(self, cart_id: int) -> List[CartItem]:
-        result = await self.db.execute(select(CartItem).where(CartItem.cart_id==cart_id))
+        result = await self.db.execute(select(CartItem).options(selectinload(CartItem.product)).where(CartItem.cart_id==cart_id))
         return list(result.scalars().all())

@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator
 from typing import List
 
 
@@ -39,13 +39,28 @@ class DataBaseSettings(BaseSettings):
     def database_url(self) -> str:
         return f'postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}'
 
+class ECommerceSettings(BaseSettings):
+    model_config = ConfigDict(env_file = '.env', extra='ignore')
 
+    ACCOUNT_ID: str = Field(default='1')
+    SECRET_KEY: str = Field(default='test_')
+    RETURN_URL: str = Field(default="http://localhost:3000/order-success")
+    PAYMENT_CURRENCY: str = Field(default='USD')
+
+    @field_validator("PAYMENT_CURRENCY")
+    def validate_currency(cls, v):
+        allowed = ["BYN", "USD", "EUR", "RUB"]
+        if v.upper() not in allowed:
+            raise ValueError(f"Currency {v} is not supported")
+        return v.upper()
+    
 class Settings:
     def __init__(self):
         
         self.app = AppSettings()
         self.security = SecuritySettings()
         self.database = DataBaseSettings()
+        self.ecommerce = ECommerceSettings()
 
 
 settings = Settings()

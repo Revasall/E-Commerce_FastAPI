@@ -6,7 +6,8 @@ from .endpoints import (auth_router,
                         user_router, 
                         category_router, 
                         product_router,
-                        cart_router)
+                        cart_router,
+                        order_router)
 
 
 
@@ -23,6 +24,7 @@ app.include_router(user_router.router)
 app.include_router(category_router.router)
 app.include_router(product_router.router)
 app.include_router(cart_router.router)
+app.include_router(order_router.router)
 
 
 @app.get('/')

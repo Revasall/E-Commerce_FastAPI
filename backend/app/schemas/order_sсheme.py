@@ -47,6 +47,10 @@ class OrderRead(OrderBase):
     
     model_config = ConfigDict(from_attributes=True)
 
+class OrderWithPaymentResponce(BaseModel):
+    order: OrderRead
+    payment_url: str
+
 class OrderUpdate(BaseModel):
     status: OrderStatus | None = None 
     external_id: str|None = None

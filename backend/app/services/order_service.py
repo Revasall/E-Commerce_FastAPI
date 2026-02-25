@@ -9,8 +9,10 @@ from backend.app.repository.order_repository import OrderRepository
 from backend.app.repository.cart_repository import CartRepository
 from backend.app.services.cart_service import CartService
 
+from backend.app.services.payment.yookassa_provider import YookassaProvider
+
 from ..schemas.cart_sсheme import CartItemCreate, CartItemRead, CartItemUpdate, CartScheme
-from ..schemas.order_sсheme import OrderCreate, OrderItemCreate, OrderItemRead, OrderRead, OrderUpdate
+from ..schemas.order_sсheme import OrderCreate, OrderItemCreate, OrderItemRead, OrderRead, OrderUpdate, OrderWithPaymentResponce
 
 from ..core.exceptions import ObjectNotFoundError, ObjectCreateError
 from ..database.database import SessionDep
@@ -20,6 +22,7 @@ class OrderService:
     def __init__(self, db: AsyncSession):
         self.repository = OrderRepository(db)
         self.cart_service = CartService(db)
+        self.payment_provider = YookassaProvider()
 
     async def _build_order_response(self, order: Order|None) -> OrderRead:
         if not order:
@@ -40,7 +43,9 @@ class OrderService:
             paid_at=order.paid_at
             )
     
-    async def create_order(self, user_id: int) -> OrderRead:
+    async def create_order(self, user_id: int) -> OrderWithPaymentResponce:
+
+        #Create order in db
         cart = await self.cart_service.get_cart(user_id)
         if not cart:
             raise ObjectNotFoundError('Cart')
@@ -67,9 +72,20 @@ class OrderService:
         if not order:
             raise ObjectCreateError
         
+        #Clean cart from user
         await self.cart_service.clear_cart(user_id)
         
-        return await self._build_order_response(order)
+        #Create payment_url
+        payment_url, payment_id = await self.payment_provider.create_payment_link(order)
+
+        order = await self.repository.update_order(order.id, OrderUpdate(
+            external_id=payment_id
+        ))
+
+        return OrderWithPaymentResponce(
+            order = await self._build_order_response(order), 
+            payment_url = payment_url)
+    
     
     async def get_all_orders(self, user_id:int) -> List[OrderRead]:
         result = await self.repository.get_all_orders_by_user_id(user_id)
