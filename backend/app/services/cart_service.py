@@ -68,6 +68,9 @@ class CartService:
         else:
             item_data.cart_id = cart.id
             item = await self.repository.add_item(item_data)
+
+        #Reload cart from DB 
+        cart = await self.repository.get_cart_by_user_id(user_id)
         
         return await self._build_cart_responce(cart)
     
@@ -98,6 +101,7 @@ class CartService:
         result = await self.repository.clear_cart(cart.id)
         if not result: 
             raise ObjectNotFoundError('Items')
+    
         
         return await self._build_cart_responce(cart)
         

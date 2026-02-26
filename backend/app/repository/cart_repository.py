@@ -19,7 +19,10 @@ class CartRepository:
         return cart
     
     async def get_cart_by_user_id(self, user_id:int) -> Cart:
-        cart = await self.db.scalar(select(Cart).where(Cart.user_id == user_id))
+        cart = await self.db.scalar(
+            select(Cart)
+            .where(Cart.user_id == user_id)
+            .options(selectinload(Cart.items)))
         return cart
     
     async def add_item(self, item_data: CartItemCreate)->CartItem:
@@ -57,7 +60,10 @@ class CartRepository:
         result = await self.db.execute(delete(CartItem).where(CartItem.cart_id == cart_id))
         await self.db.commit()
         
-        return result.rowcount > 0
+        if result.rowcount > 0:
+            cart = await self.db.scalar(select(Cart).where(Cart.id == cart_id))
+            return cart
+        return None
 
     async def get_cart_items(self, cart_id: int) -> List[CartItem]:
         result = await self.db.execute(select(CartItem).options(selectinload(CartItem.product)).where(CartItem.cart_id==cart_id))
