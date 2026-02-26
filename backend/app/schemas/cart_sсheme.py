@@ -11,9 +11,14 @@ class CartItemBase(BaseModel):
 class CartItemCreate(CartItemBase):
     ...
 
-class CartItemRead(CartItemBase):
+class CartItemRead(BaseModel):
     id: int
     
+    cart_id: int
+    product_id: int
+    quantity: int = Field(gt=0)
+    image_url: str | None = Field(default=None)
+
     product_title: str
     price: float
     total_price: float

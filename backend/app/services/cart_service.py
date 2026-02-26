@@ -84,6 +84,9 @@ class CartService:
         item = await self.repository.update_item_quantity(item_id, item_update_data.quantity)
         if not item: 
             raise ObjectNotFoundError('Item')
+        
+        cart = await self.repository.get_cart_by_user_id(user_id)
+
         return await self._build_cart_responce(cart)
     
     async def remove_item(self, user_id:int, item_id: int) -> CartScheme: 
@@ -93,6 +96,7 @@ class CartService:
         if not remove:
             raise ObjectNotFoundError('Item')
         
+        cart = await self.repository.get_cart_by_user_id(user_id)
         return await self._build_cart_responce(cart)
 
     async def clear_cart(self, user_id: int) -> CartScheme:

@@ -7,7 +7,8 @@ from .endpoints import (auth_router,
                         category_router, 
                         product_router,
                         cart_router,
-                        order_router)
+                        order_router,
+                        webhooks)
 
 
 
@@ -25,6 +26,7 @@ app.include_router(category_router.router)
 app.include_router(product_router.router)
 app.include_router(cart_router.router)
 app.include_router(order_router.router)
+app.include_router(webhooks.router)
 
 
 @app.get('/')

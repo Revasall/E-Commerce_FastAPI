@@ -8,7 +8,7 @@ router = APIRouter(prefix='/webhooks', tags=["Payments"])
 async def yookassa_webhook(request: Request,
                            service: OrderServiceDep):
     try:
-        data = request.json()
+        data = await request.json()
         logging.info(f'Webhook received: {data}')
 
         if data.get('event') == 'payment.succeeded':

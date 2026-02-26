@@ -17,7 +17,7 @@ async def create_order(current_user: UserDep,
     return await service.create_order(current_user.id)
 
 
-@router.get('/', response_model=OrderRead)
+@router.get('/')
 async def get_all_order(current_user: UserDep, service: OrderServiceDep):
     return await service.get_all_orders(current_user.id)
 

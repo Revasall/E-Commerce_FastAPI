@@ -68,12 +68,13 @@ class OrderService:
             items=items
         )
 
+        #Clean cart from user
+        await self.cart_service.clear_cart(user_id)
+        
         order = await self.repository.create_order(order)
         if not order:
             raise ObjectCreateError
         
-        #Clean cart from user
-        await self.cart_service.clear_cart(user_id)
         
         #Create payment_url
         payment_url, payment_id = await self.payment_provider.create_payment_link(order)
