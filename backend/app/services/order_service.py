@@ -132,7 +132,7 @@ class OrderService:
             status=OrderStatus.PAID,
             external_id=external_id,
             payment_details=payment_details,
-            paid_at=datetime.now(timezone.utc)
+            paid_at=datetime.now(timezone.utc).replace(tzinfo=None)
         )
 
         order = await self.repository.update_order(order_id, order_update_data)
