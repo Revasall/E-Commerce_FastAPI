@@ -96,7 +96,7 @@ async def test_admin(session):
     existing_user = await session.get(User, user.id)
     if existing_user:
         try:
-            await session.delete(user)
+            await session.delete(existing_user)
             await session.commit()
         except:
             await session.rollback()
@@ -155,7 +155,7 @@ async def test_category(session):
     existing_category = await session.get(Category, category.id)
     if existing_category:
         try:
-            await session.delete(category)
+            await session.delete(existing_category)
             await session.commit()
         except:
             await session.rollback()
@@ -183,7 +183,7 @@ async def test_product(session, test_category):
     existing_product = await session.get(Product, product.id)
     if existing_product:
         try:
-            await session.delete(product)
+            await session.delete(existing_product)
             await session.commit()
         except:
             await session.rollback()
@@ -222,13 +222,13 @@ async def test_cart_item(session, test_cart,test_product):
     await session.refresh(item)
     yield item
 
-    existing_cart_item = await session.get(CartItem, item.id)
-    if existing_cart_item:
-        try:
-            await session.delete(existing_cart_item)
-            await session.commit()
-        except:
-            await session.rollback()
+    # try:
+    #     existing_cart_item = await session.get(CartItem, item.id)
+    #     if existing_cart_item:
+    #         await session.delete(existing_cart_item)
+    #         await session.commit()
+    # except:
+    #     await session.rollback()
 
 
 @pytest_asyncio.fixture(scope='function')
@@ -252,8 +252,6 @@ async def test_order(session, test_user, test_product, test_cart, test_cart_item
             quantity=test_cart_item.quantity,
             result_price=test_cart_item.price*test_cart_item.quantity
         )]
-
-
 
     
     session.add_all(items)

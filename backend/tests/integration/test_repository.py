@@ -329,7 +329,12 @@ class TestCartRepository:
 
         # 2. Clear cart
         clear_res = await repo.clear_cart(test_cart.id)
-        assert clear_res is True
+        clear_items = await repo.get_cart_items(test_cart.id)
+        assert isinstance(clear_res, Cart)
+        assert clear_items == []
+
+        empty_cart_clean = await repo.clear_cart(test_cart.id)
+        assert empty_cart_clean is None
 
         # Check that there are no items left
         items_after = await repo.get_cart_items(test_cart.id)

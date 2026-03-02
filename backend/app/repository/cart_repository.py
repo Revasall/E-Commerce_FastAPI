@@ -56,7 +56,7 @@ class CartRepository:
             return True
         return False
     
-    async def clear_cart(self, cart_id:int) -> bool:
+    async def clear_cart(self, cart_id:int) -> Cart | None:
         result = await self.db.execute(delete(CartItem).where(CartItem.cart_id == cart_id))
         await self.db.commit()
         

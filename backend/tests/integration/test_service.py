@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 from datetime import datetime, timezone
 
@@ -16,8 +18,10 @@ from backend.app.schemas.product_sсheme import ProductCreate, ProductRead, Prod
 from backend.app.services.product_service import ProductService
 
 from backend.app.services.order_service import OrderService
-from backend.app.schemas.order_sсheme import OrderRead
+from backend.app.schemas.order_sсheme import OrderRead, OrderWithPaymentResponce
 from backend.app.models.order import OrderStatus
+
+from backend.app.services.payment.yookassa_provider import YookassaProvider
 
 from backend.app.core.exceptions import InvalidCredentialsError, ObjectAlreadyExistsError, ObjectNotFoundError, InvalidTokenError
 
@@ -389,37 +393,32 @@ class TestCartService:
         assert cart_res.items[0].quantity == 2
         assert cart_res.total_quantity == 2
 
-    async def test_update_item_quantity(self, session, test_user, test_product, test_cart):
+    async def test_update_item_quantity(self, session, test_user, test_cart_item):
         """Check: updating the quantity of an existing product"""
         cart_ser = CartService(session)
-        
-        item_data = CartItemCreate(product_id=test_product.id, 
-                                   quantity=1, 
-                                   cart_id=test_cart.id)
-        
-        initial_cart = await cart_ser.add_item(test_user.id, item_data)        
+              
 
         update_data = CartItemUpdate(quantity=10)
-        updated_cart = await cart_ser.update_item(test_user.id, initial_cart.id, update_data)
+        updated_cart = await cart_ser.update_item(test_user.id, test_cart_item.id, update_data)
         assert updated_cart.items[0].quantity == 10
-        assert updated_cart.total_price == test_product.price * 10
+        assert updated_cart.total_price == test_cart_item.price * 10
 
         with pytest.raises(ObjectNotFoundError) as err_item:
             await cart_ser.update_item(test_user.id, 999, update_data)
         assert err_item.value.status_code == 404
 
-    async def test_remove_item(self, session, test_user, test_product, test_cart):
+    async def test_remove_item(self, session, test_user, test_cart_item):
         """Checking if an item has been removed from the cart"""
         cart_ser = CartService(session)
         
-        item_data = CartItemCreate(product_id=test_product.id, 
-                                   quantity=1, 
-                                   cart_id=test_cart.id)
+        # item_data = CartItemCreate(product_id=test_product.id, 
+        #                            quantity=1, 
+        #                            cart_id=test_cart.id)
 
-        new_cart = await cart_ser.add_item(test_user.id, item_data)
-        item = new_cart.items[0]
+        # new_cart = await cart_ser.add_item(test_user.id, item_data)
+        # item = new_cart.items[0]
 
-        cart_res = await cart_ser.remove_item(test_user.id, item.id)
+        cart_res = await cart_ser.remove_item(test_user.id, test_cart_item.id)
         assert len(cart_res.items) == 0
         assert cart_res.total_price == 0
 
@@ -428,15 +427,9 @@ class TestCartService:
         assert err_item.value.status_code == 404
 
 
-    async def test_clear_cart(self, session, test_user, test_product, test_cart):
+    async def test_clear_cart(self, session, test_user, test_cart_item):
         """Checking clear cart"""
         cart_ser = CartService(session)
-        
-        item_data = CartItemCreate(product_id=test_product.id, 
-                                   quantity=1, 
-                                   cart_id=test_cart.id)
-        
-        await cart_ser.add_item(test_user.id, item_data)
         
         cart_res = await cart_ser.clear_cart(test_user.id)
         assert len(cart_res.items) == 0
@@ -449,12 +442,29 @@ class TestCartService:
 @pytest.mark.asyncio
 class TestOrderService:
 
-    async def test_create_order_success(self, session, test_user, test_cart_item):
+    async def test_create_order_success(self, session, test_user, test_cart_item, monkeypatch):
+         # Мокируем ТОЛЬКО Payment.create из библиотеки yookassa
+        class MockConfirmation:
+            confirmation_url = "https://yoomoney.ru/mock_payment_123"
+        
+        class MockPayment:
+            confirmation = MockConfirmation()
+            id = "mock_payment_id_123"
+        
+        monkeypatch.setattr(
+            "backend.app.services.payment.yookassa_provider.Payment.create",
+            lambda payment_data, idempotency_key: MockPayment()
+        )
+        
         order_ser = OrderService(session)
-        
+
         #1 Create an order based on cart fixtures
-        order = await order_ser.create_order(test_user.id)
+        responce = await order_ser.create_order(test_user.id)
+        order = responce.order
+        url = responce.payment_url
         
+        assert isinstance(responce, OrderWithPaymentResponce)
+
         # Checking the created order
         assert isinstance(order, OrderRead)
         assert order.user_id == test_user.id
@@ -462,6 +472,10 @@ class TestOrderService:
         assert order.total_price == test_cart_item.price * test_cart_item.quantity  # Добавлено: проверка total_price
         assert len(order.items) == 1
         assert order.items[0].product_name == test_cart_item.product_title
+        
+        # Checking the created payment URL
+        assert isinstance(url, str)
+        assert url.startswith('https://yoomoney.ru/')
         
         #2 Check that the service has caused the trash to be cleared.
         cart_after = await order_ser.cart_service.get_cart(test_user.id)
@@ -545,3 +559,25 @@ class TestOrderService:
         # Test CANCELLED
         cancelled_order = await order_ser.order_cancelled_update(test_order.id)
         assert cancelled_order.status == OrderStatus.CANCELLED
+
+
+@pytest.mark.asyncio
+class TestPaymentProvider:
+    async def test_yookassa_provider(self, monkeypatch, session, test_order):
+        class FakeConfirmation:
+            confirmation_url = "https://pay.example/confirm"
+
+        class FakePayment:
+            confirmation = FakeConfirmation()
+            id = "pay_123"
+
+        # Patch Payment.create used inside yookassa_provider (it is imported as Payment)
+        monkeypatch.setattr(
+            "backend.app.services.payment.yookassa_provider.Payment.create",
+            lambda payment_data, idempotency_key: FakePayment()
+        )
+
+        provider = YookassaProvider()
+        url, pid = await provider.create_payment_link(test_order)
+        assert url == "https://pay.example/confirm"
+        assert pid == "pay_123"

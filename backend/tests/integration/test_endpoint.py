@@ -1,7 +1,9 @@
 import pytest
 
+from backend.app.main import app
 from backend.app.models.user import User
 from backend.app.schemas.category_sсheme import CategoryRead
+from backend.app.services.order_service import OrderServiceDep
 
 
 @pytest.mark.asyncio 
@@ -355,3 +357,95 @@ class TestCartEndpoint:
         assert data["items"] == []
         assert data["total_quantity"] == 0
 
+
+@pytest.mark.asyncio
+class TestOrderEndpoints:
+
+    async def test_create_order_mocked(self, client, test_auth_header, test_cart_item, monkeypatch):
+        """Test order creation with mocked service"""
+        class MockYookassaProvider:
+            async def create_payment_link(self, order):
+                return ("https://yoomoney.ru/test", "mock_payment_id_123")
+        
+        # class MockOrderService:
+        #     async def create_order(self, user_id):
+        #         return {
+        #             "payment_url": "https://yoomoney.ru/test",
+        #             "payment_id": "mock_payment_id_123",
+        #             "order": {"id": 100, "user_id": user_id, "total_price": 99.99}
+        #         }
+        
+        # Мокируем импорт YookassaProvider
+        monkeypatch.setattr(
+            "backend.app.services.order_service.YookassaProvider",
+            MockYookassaProvider
+        )
+
+        # app.dependency_overrides[OrderServiceDep] = lambda: MockOrderService()
+        
+        resp = await client.post('/orders/create', headers=test_auth_header)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data['payment_url'].startswith("https://yoomoney.ru/test")
+        assert data["order"]['external_id'] == "mock_payment_id_123"
+        
+        app.dependency_overrides.pop(OrderServiceDep, None)
+
+    async def test_get_all_orders(self, client, test_auth_header, test_order, test_user):
+        
+        resp = await client.get('/orders/', headers = test_auth_header)
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        assert data[0]['user_id'] == test_user.id
+        assert data[0]['id'] == test_order.id
+    
+    async def test_get_order_by_id(self, client, test_auth_header, test_order):
+
+        resp = await client.get(f'orders/{test_order.id}', headers = test_auth_header)
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data['id'] == test_order.id
+
+
+@pytest.mark.asyncio
+class TestWebhooks:
+    async def test_yookassa_webhook(self, client, test_order):
+        """Test successful payment webhook"""
+
+        #Succes
+        payload = {
+            "event": "payment.succeeded",
+            "object": {
+                "id": "pay_test_123",
+                "metadata": {"order_id": f"{test_order.id}"},
+            }
+        }
+        
+        resp = await client.post("/webhooks/yookassa", json=payload)
+        assert resp.status_code == 200
+        assert resp.json().get("status") == "ok"
+
+        #Error handling
+        payload = {
+            "event": "payment.succeeded",
+            "object": {"id": "pay_fail", "metadata": {"order_id": "1"}}
+        }
+        
+        resp = await client.post("/webhooks/yookassa", json=payload)
+        assert resp.status_code == 200
+        assert resp.json().get("status") == "error"
+        assert "message" in resp.json()
+        
+
+        #Invalid_event
+        payload = {
+            "event": "payment.waiting_for_capture",
+            "object": {"id": "pay_123", "metadata": {"order_id": "1"}}
+        }
+        
+        resp = await client.post("/webhooks/yookassa", json=payload)
+        assert resp.status_code == 200
+        assert resp.json().get("status") == "ok"
