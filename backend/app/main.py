@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
+from .core.apenapi import tags_metadata
 from .database.database import lifespan
 from .endpoints import (auth_router, 
                         user_router, 
@@ -14,8 +15,33 @@ from .endpoints import (auth_router,
 
 app = FastAPI(
     title='E-Commerce_FastAPI',
-    description='An online store API with implemented authorization, a shopping cart, and service, and Stripe',
-    version='1.0.0',
+    description="""
+    E‑Commerce_FastAPI
+    This FastAPI application used by the
+    online‑store backend.  The project is intended as a full‑featured
+
+    Features
+    --------
+
+    * User registration/login with JWT‑based auth.
+    * Role‑aware user management (admin/customer).
+    * CRUD for categories and products.
+    * Shopping cart: add/remove items, view totals.
+    * Order creation/processing and order history.
+    * Yookassa payment integration with webhook handling.
+    * Database lifespan management (startup/shutdown).
+    * Global HTTPException handler returning JSON errors.
+
+    Usage
+    -----
+    Run with Uvicorn:
+
+    ```bash
+    uvicorn app.main:app --reload
+    """,
+    version='0.1.0',
+    openapi_tags=tags_metadata,
+    
     lifespan=lifespan
 )
 

@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import String, Boolean, Enum
+from sqlalchemy import String, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ..models.base import Base
 
@@ -9,6 +9,10 @@ class UserRole(enum.Enum):
     ADMIN = 'admin'
 
 class User(Base):
+    """
+    Identity and access management model. 
+    Handles authentication data and links to user-specific business entities.
+    """
     __tablename__ = 'users'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -17,10 +21,12 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String)
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.USER, nullable=False)
 
+    # Profile info
     first_name: Mapped[str] = mapped_column(String)
     last_name: Mapped[str] = mapped_column(String)
     image: Mapped[str| None] = mapped_column(String, default=None)
 
+    # One-to-many relationships
     carts = relationship('Cart', back_populates='user', cascade='all, delete-orphan')
     orders = relationship('Order', back_populates='user')
 

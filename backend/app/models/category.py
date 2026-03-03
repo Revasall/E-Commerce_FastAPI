@@ -1,9 +1,14 @@
-from sqlalchemy import String, Integer, Boolean, Numeric, ForeignKey
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ..models.base import Base
 
 
 class Category(Base):
+    """
+    Hierarchical grouping for products. 
+    Uses slugs for SEO-friendly URL routing.
+    """
+
     __tablename__ = 'categories'
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)

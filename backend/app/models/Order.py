@@ -1,8 +1,7 @@
 from enum import Enum
 from datetime import datetime
-from typing import Dict
 from sqlalchemy import JSON, CheckConstraint, String, Integer, ForeignKey, Float, DateTime, Enum as SQLEnum, func
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ..models.base import Base
 
 class OrderStatus(str, Enum):
@@ -13,17 +12,19 @@ class OrderStatus(str, Enum):
 
 
 class Order(Base):
+    """Finalized purchase record including payment status and snapshot of totals."""
     __tablename__ = 'orders'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('users.id'), nullable=True)
     status: Mapped[OrderStatus] = mapped_column(SQLEnum(OrderStatus), default=OrderStatus.CREATED, nullable=False)
-
+    
+    # Denormalized totals to preserve history if prices change later
     total_quantity: Mapped[int] = mapped_column(Integer, nullable=False) 
     total_price: Mapped[float] = mapped_column(Float(precision=2), nullable=False) 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    #payments info
+    # External payment gateway synchronization
     external_id: Mapped[str | None] = mapped_column(String, default=None)
     payment_details: Mapped[dict|None] = mapped_column(JSON, default=None)
     paid_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)

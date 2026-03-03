@@ -8,6 +8,12 @@ from .exceptions import InvalidTokenError, InvalidTokenTypeError, ExpiredTokenEr
 
 
 class SecurityService:
+    """
+    Handles authentication security including password hashing and JWT management.
+    
+    This service abstracts the complexity of cryptographic operations, 
+    providing a high-level API for token lifecycle and credential verification.
+    """
 
     def __init__(self):
         self.SECRET_KEY = settings.security.SECRET_KEY
@@ -17,6 +23,7 @@ class SecurityService:
         self.password_hash = PasswordHash.recommended()
         
     def get_password_hash(self, password: str) -> str:
+        """Generates a secure salted hash from a plain-text password."""
         return self.password_hash.hash(password)
     
     def verify_password(
@@ -24,6 +31,7 @@ class SecurityService:
             plain_passwrod: str,
             hashed_passwrod: str
             ) -> bool:
+        """Verifies a plain password against its hashed version."""
         return self.password_hash.verify(plain_passwrod, hashed_passwrod)
 
 
@@ -32,6 +40,9 @@ class SecurityService:
             payload: dict, 
             expires_delta: timedelta
             ) -> str:
+        
+        """Low-level helper to encode a JWT with a specific expiration."""
+        
         to_encode = payload.copy()
         expire = datetime.now(timezone.utc) + expires_delta
         to_encode.update({'exp': expire})
@@ -44,6 +55,7 @@ class SecurityService:
             user: User,
             expires_delta: int | None = None
             ) -> str:
+        """Generates a short-lived access token for user authentication."""
         
         payload = {
             'sub': str(user.id),
@@ -63,7 +75,8 @@ class SecurityService:
             user: User,
             expires_delta: int | None = None
             ) -> str:
-        
+        """Generates a long-lived refresh token used to obtain new access tokens."""
+
         payload = {
             'sub': str(user.id),
             'token_type': 'refresh'
@@ -79,9 +92,25 @@ class SecurityService:
             token: str,
             expected_type: str
             ) -> dict:
+        """Decodes and validates a JWT token.
+
+        Checks signature validity, expiration, and enforces token type 
+        to prevent 'token substitution' attacks (e.g., using refresh as access).
+
+        Args:
+            token: The raw JWT string.
+            expected_type: Either 'access' or 'refresh'.
+
+        Raises:
+            InvalidTokenTypeError: If token_type claim doesn't match expected_type.
+            ExpiredTokenError: If the 'exp' claim is in the past.
+            InvalidTokenError: For any other decoding issues (signature, etc).
+        """
     
         try:
             payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
+            
+            # Critical: prevent using a long-lived Refresh token as an Access token
             if payload['token_type'] != expected_type:
                 raise InvalidTokenTypeError(
                     token_type=payload['token_type'],

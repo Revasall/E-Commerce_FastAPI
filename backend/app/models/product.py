@@ -4,16 +4,19 @@ from ..models.base import Base
 
 
 class Product(Base):
+    """
+    Commercial item details including pricing and categorization.
+    """
+
     __tablename__ = 'products'
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    
     title: Mapped[str] = mapped_column(String, unique=True, index=True)
     description: Mapped[str|None] = mapped_column(Text, default=None)
+    
+    # Stored as Numeric for financial precision
     price: Mapped[float] = mapped_column(Numeric, nullable=False)
-    
     category_id: Mapped[int|None] = mapped_column(ForeignKey('categories.id'), default=None)
-    
     image: Mapped[str|None] = mapped_column(String, default=None)
 
     category = relationship('Category', back_populates='products')

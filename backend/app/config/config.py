@@ -1,9 +1,20 @@
+"""
+Application configuration classes.
+
+Each class inherits from `pydantic_settings.BaseSettings` and
+loads values ​​from the environment/.env.
+A `settings` instance is created upon import and is then
+used throughout the project.
+"""
+
 from pydantic_settings import BaseSettings
 from pydantic import ConfigDict, Field, field_validator
 from typing import List
 
 
 class AppSettings(BaseSettings):
+    "Basic application settings (name, debug, CORS, static paths)."""
+
     model_config = ConfigDict(env_file = '.env', extra='ignore')
     
     APP_NAME: str = Field(default="FastAPI Shop")
@@ -18,7 +29,9 @@ class AppSettings(BaseSettings):
     IMAGES_DIR: str = Field(default="static/images")
 
 
-class SecuritySettings(BaseSettings): 
+class SecuritySettings(BaseSettings):
+    """JWT Encryption Parameters and Token Timeouts"""
+
     model_config = ConfigDict(env_file = '.env', extra='ignore')
 
     SECRET_KEY: str = Field(default='secretkey')
@@ -27,6 +40,8 @@ class SecuritySettings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=30)
 
 class DataBaseSettings(BaseSettings):
+    """Database connection settings"""
+
     model_config = ConfigDict(env_file = '.env', extra='ignore')
 
     DB_USER: str = Field(default='postgres')
@@ -40,6 +55,13 @@ class DataBaseSettings(BaseSettings):
         return f'postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}'
 
 class ECommerceSettings(BaseSettings):
+    """""
+    Payment gateway / e‑commerce specific settings.
+
+    Used for Yookassa integration: account id, secret key, return URL
+    and currency.  The validator restricts the currency to supported
+    values.
+    """
     model_config = ConfigDict(env_file = '.env', extra='ignore')
 
     ACCOUNT_ID: str = Field(default='1')
@@ -55,6 +77,7 @@ class ECommerceSettings(BaseSettings):
         return v.upper()
     
 class Settings:
+    """A collection of all your settings: app, security, database, ecommerce."""
     def __init__(self):
         
         self.app = AppSettings()

@@ -1,14 +1,17 @@
 from datetime import datetime
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.ext.hybrid import hybrid_property
 from ..models.base import Base
 
 class Cart(Base):
+    """Temporary storage for items intended for purchase."""
     __tablename__ = 'carts'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False)
+    
+    # Timestamps for cleanup of abandoned carts
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -16,13 +19,12 @@ class Cart(Base):
     items = relationship('CartItem', back_populates='cart', cascade='all, delete-orphan')
 
 class CartItem(Base):
+    """Specific product and quantity inside a cart."""
     __tablename__ = 'cart_items'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     cart_id: Mapped[int] = mapped_column(Integer, ForeignKey('carts.id'), nullable=False)
     product_id: Mapped[int] = mapped_column(Integer, ForeignKey('products.id'), nullable=False)
-    # product_title: Mapped[str] = mapped_column(String, nullable=False) #праверыць аўтаматычную ўстаўку тайтла
-    # price: Mapped[float] = mapped_column(Float, nullable=False) #праверыць аўтаматычную ўстаўку кошта
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     image_url: Mapped[str|None] = mapped_column(String, default=None)
 
