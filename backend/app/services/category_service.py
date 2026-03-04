@@ -12,12 +12,24 @@ from ..database.database import SessionDep
 
 
 class CategoryService:
+    """
+    Business logic layer for managing product categories.
+    Handles slug generation, uniqueness validation, and object existence checks.
+    """
+
     def __init__(self, db:AsyncSession):
         self.repository = CategoryRepository(db)
 
 
     async def create(self, category_data: CategoryCreate) -> CategoryRead:
-        # Availability check and automatic slug generation
+        """
+        Creates a new category with automatic slug generation.
+        
+        Logic:
+        1. If slug is not provided, generates it from the title.
+        2. Checks if a category with this slug already exists to prevent URL collisions.
+        """
+
         if not category_data.slug:
             category_data.slug = slugify(category_data.title)
 
@@ -30,6 +42,8 @@ class CategoryService:
         return CategoryRead.model_validate(new_category)
 
     async def get_all(self) -> List[CategoryRead]:
+        """Retrieves all categories, validated against the CategoryRead schema."""
+
         categories = await self.repository.get_all()
         
         return ensure_exists(
@@ -38,7 +52,9 @@ class CategoryService:
             exception=ObjectNotFoundError,
             validate_scheme=CategoryRead)
     
-    async def get_by_id(self, category_id: int) -> CategoryRead: 
+    async def get_by_id(self, category_id: int) -> CategoryRead:
+        """Fetches a category by ID and ensures it exists."""
+
         category = await self.repository.get_by_id(category_id)
 
         return ensure_exists(
@@ -48,6 +64,8 @@ class CategoryService:
             validate_scheme=CategoryRead)
     
     async def get_by_title(self, title: str) -> CategoryRead:
+        """Retrieves a category by its title for frontend routing."""
+
         category = await self.repository.get_by_title(title)
 
         return ensure_exists(
@@ -58,6 +76,7 @@ class CategoryService:
     
     
     async def get_by_slug(self, slug: str) -> CategoryRead:
+        """Retrieves a category by its URL slug for frontend routing."""
 
         category = await self.repository.get_by_slug(slug)
 
@@ -69,10 +88,13 @@ class CategoryService:
     
     
     async def update(self, category_id: int, category_data: CategoryUpdate) -> CategoryRead:
+        """
+        Updates category details. 
+        If the title changes without a new slug, re-generates the slug.
+        """
 
         if not category_data.slug:
             category_data.slug = slugify(category_data.title)
-
 
         existing = await self.repository.get_by_slug(category_data.slug)
         if existing and existing.id != category_id:
@@ -88,8 +110,9 @@ class CategoryService:
             )     
 
     async def delete(self, category_id: int) -> None:
-        category = await self.repository.delete(category_id=category_id)
+        """Removes a category and returns its final state before deletion."""
 
+        category = await self.repository.delete(category_id=category_id)
         return ensure_exists(
             category, 
             'Category', 

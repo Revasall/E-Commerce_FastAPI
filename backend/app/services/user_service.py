@@ -6,18 +6,31 @@ from backend.app.core.security import security_service
 
 
 from ..repository.user_repository import UserRepository
-from ..schemas.user_sсheme import UserBase, UserCreate, UserRead, UserUpdate
+from ..schemas.user_sсheme import UserCreate, UserRead, UserUpdate
 from ..models.user import User
 from ..core.exceptions import ObjectNotFoundError, ObjectAlreadyExistsError
 from ..core.utils import ensure_exists
 from ..database.database import SessionDep
 
 class UserService:
+    """
+    Business logic layer for User management.
+    Handles credential security, profile updates, and identity validation.
+    """
+
     def __init__(self, db: AsyncSession):
         self.repository = UserRepository(db)
         self.security = security_service
 
     async def create_user(self, user_data: UserCreate) -> User:
+        """
+        Creates a new user account with pre-persistence validation.
+        
+        Checks:
+        1. Username uniqueness.
+        2. Email uniqueness.
+        """
+
         existing = await self.repository.get_user_by_username(user_data.username)
         if existing:
             raise ObjectAlreadyExistsError('User with this username already exist.')
@@ -30,6 +43,8 @@ class UserService:
         return new_user
     
     async def get_all_users(self) -> List[UserRead]:
+        """Retrieves all users, converted to public Read schemas."""
+
         users = await self.repository.get_all_users()
 
         return ensure_exists(
@@ -43,6 +58,8 @@ class UserService:
                              user_id: int, 
                              scheme: bool
                              ) -> UserRead | User:
+        """Fetches a user by ID."""
+        
         user = await self.repository.get_user_by_id(user_id)
 
         return ensure_exists(
@@ -57,6 +74,8 @@ class UserService:
                                    username: str,
                                    scheme: bool
                                    ) -> UserRead | User:
+        """Retrieves a raw User model by username for authentication purposes."""
+        
         user = await self.repository.get_user_by_username(username)
         
         return ensure_exists(
@@ -70,7 +89,8 @@ class UserService:
                                 email: str,
                                 scheme: bool
                                 ) -> UserRead | User:
-        
+        """Fetches a user by email."""
+
         user = await self.repository.get_user_by_email(email)
         
         return ensure_exists(
@@ -81,7 +101,11 @@ class UserService:
         )
     
     async def update_user(self, user_id: int, user_data: UserUpdate) -> UserRead:
-        
+        """
+        Updates user profile with integrity checks.
+        Automatically hashes the password if a new one is provided.
+        """
+
         if user_data.username:
             existing = await self.repository.get_user_by_username(user_data.username)
             if existing and existing.id != user_id:
@@ -105,6 +129,9 @@ class UserService:
         )
     
     async def delete_user(self, user_id: int) -> UserRead:
+        """Removes an user and returns its final state before deletion."""
+
+
         user = await self.repository.delete_user(user_id)
 
         return ensure_exists(

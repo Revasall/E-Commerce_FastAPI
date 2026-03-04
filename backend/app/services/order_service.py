@@ -19,12 +19,21 @@ from ..database.database import SessionDep
 from ..core.utils import ensure_exists
 
 class OrderService:
+    """
+    Main business logic layer for order management.
+    Handles the transition from shopping cart to order and integrates with payment providers.
+    """
+
     def __init__(self, db: AsyncSession):
         self.repository = OrderRepository(db)
         self.cart_service = CartService(db)
         self.payment_provider = YookassaProvider()
 
     async def _build_order_response(self, order: Order|None) -> OrderRead:
+        """
+        Private helper to enrich Order model with its items for a detailed response.
+        """
+
         if not order:
             raise ObjectNotFoundError('Order')
         
@@ -44,12 +53,21 @@ class OrderService:
             )
     
     async def create_order(self, user_id: int) -> OrderWithPaymentResponce:
+        """
+        Converts a user's active cart into a formal order.
+        
+        Steps:
+        1. Fetch and validate cart content.
+        2. Create order and order items records.
+        3. Generate a payment link via Yookassa.
+        4. Clear the cart upon successful order creation.
+        """
 
-        #Create order in db
         cart = await self.cart_service.get_cart(user_id)
         if not cart:
             raise ObjectNotFoundError('Cart')
         
+        # Map cart items to order item creation schemas (capturing current price snapshots)
         items = [
             OrderItemCreate(
                 product_id=item.product_id,
@@ -60,28 +78,28 @@ class OrderService:
             ) for item in cart.items]
         if len(items) == 0:
             raise ObjectNotFoundError('Items')
-
+        
         order = OrderCreate(
             user_id = user_id,
             total_quantity=cart.total_quantity,
             total_price=cart.total_price,
             items=items
         )
-
-        #Clean cart from user
-        await self.cart_service.clear_cart(user_id)
         
         order = await self.repository.create_order(order)
         if not order:
-            raise ObjectCreateError
+            raise ObjectCreateError('Order')
         
         
-        #Create payment_url
+        # Generate payment session
         payment_url, payment_id = await self.payment_provider.create_payment_link(order)
 
+        # Link payment provider's ID to our order
         order = await self.repository.update_order(order.id, OrderUpdate(
             external_id=payment_id
         ))
+
+        await self.cart_service.clear_cart(user_id)
 
         return OrderWithPaymentResponce(
             order = await self._build_order_response(order), 
@@ -89,6 +107,8 @@ class OrderService:
     
     
     async def get_all_orders(self, user_id:int) -> List[OrderRead]:
+        """Retrieves a specific order with full item details."""
+
         result = await self.repository.get_all_orders_by_user_id(user_id)
         
         if result == []:
@@ -113,21 +133,22 @@ class OrderService:
 
     
     async def get_order_by_id(self, order_id: int):
+        """Returns the complete order history for a user."""
+
         order = await self.repository.get_order_by_id(order_id)
         
         return await self._build_order_response(order)
     
-    # async def update_order_status(self, order_id: int, order_status: OrderStatus) -> OrderRead:
-    #     order_update_data = OrderUpdate(status=order_status)
-    #     order = await self.repository.update_order(order_id, order_update_data)
-
-    #     return await self._build_order_response(order)
     
     async def order_payment_update(self, 
                                    order_id:int,
                                    external_id: str,
                                    payment_details: dict[str, Any]) -> OrderRead:
-        
+        """
+        Updates order status to PAID after successful webhook notification.
+        Records external transaction details and payment timestamp.
+        """
+
         order_update_data = OrderUpdate(
             status=OrderStatus.PAID,
             external_id=external_id,
@@ -140,12 +161,16 @@ class OrderService:
         return await self._build_order_response(order)
     
     async def order_failed_update(self, order_id: int) -> OrderRead:
+        """Marks an order as failed if payment was rejected."""
+
         order_update_data = OrderUpdate(status=OrderStatus.FAILED)
         order = await self.repository.update_order(order_id, order_update_data)
 
         return await self._build_order_response(order)
     
     async def order_cancelled_update(self, order_id: int) -> OrderRead:
+        """Marks an order as canceled."""
+
         order_update_data = OrderUpdate(status=OrderStatus.CANCELLED)
         order = await self.repository.update_order(order_id, order_update_data)
 

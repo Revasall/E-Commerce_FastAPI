@@ -11,12 +11,21 @@ from ..core.exceptions import ObjectNotFoundError
 from ..database.database import SessionDep
 
 class CartService:
+    """
+    Business logic for managing shopping carts.
+    Coordinates between CartRepository and ProductRepository to provide enriched cart data.
+    """
 
     def __init__(self, db: AsyncSession):
         self.repository = CartRepository(db)
         self.product_repository = ProductRepository(db)
 
     async def _build_cart_responce(self, cart: Cart) -> CartScheme:
+        """
+        Private helper to transform a Cart model into a comprehensive CartScheme.
+        Calculates total prices and quantities on the fly.
+        """
+        # items are already loaded via selectinload in repository
         items = await self.repository.get_cart_items(cart.id)
         if items: 
             cart_items_read = []
@@ -37,6 +46,8 @@ class CartService:
         )
     
     async def _check_cart(self, user_id: int) -> Cart:
+        """Ensures a cart exists for the user, creating one if necessary."""
+
         cart = await self.repository.get_cart_by_user_id(user_id)
         if not cart:
             raise ObjectNotFoundError('Cart')
@@ -44,14 +55,20 @@ class CartService:
 
 
     async def get_cart(self, user_id:int) -> CartScheme:
-        """Get cart by user_id or create if cart doesn't exist"""
+        """Retrieves the current user's cart with all calculated totals."""
+        
         cart = await self.repository.get_cart_by_user_id(user_id)
         if not cart:
             cart = await self.repository.create_cart(user_id)
         return await self._build_cart_responce(cart)
     
     async def add_item(self, user_id:int, item_data: CartItemCreate) -> CartScheme:
-
+        """
+        Adds a product to the cart or updates quantity if it already exists.
+        Validates product existence before adding.
+        """
+        
+        # Verify product exists in catalog
         product = await self.product_repository.get_by_id(item_data.product_id)
         if not product:
             raise ObjectNotFoundError('Product')
@@ -69,7 +86,7 @@ class CartService:
             item_data.cart_id = cart.id
             item = await self.repository.add_item(item_data)
 
-        #Reload cart from DB 
+        # Return refreshed cart state
         cart = await self.repository.get_cart_by_user_id(user_id)
         
         return await self._build_cart_responce(cart)
@@ -78,6 +95,7 @@ class CartService:
                           user_id: int, 
                           item_id:int, 
                           item_update_data: CartItemUpdate) -> CartScheme:
+        """Updates the quantity of a specific item in the user's cart."""
 
         cart = await self._check_cart(user_id)
 
@@ -90,6 +108,8 @@ class CartService:
         return await self._build_cart_responce(cart)
     
     async def remove_item(self, user_id:int, item_id: int) -> CartScheme: 
+        """Deletes an item from the cart and returns the updated cart state."""
+
         cart = await self._check_cart(user_id)
 
         remove = await self.repository.remove_item(item_id)
@@ -100,8 +120,9 @@ class CartService:
         return await self._build_cart_responce(cart)
 
     async def clear_cart(self, user_id: int) -> CartScheme:
-        cart = await self._check_cart(user_id)    
+        """Wipes all items from the user's cart."""
 
+        cart = await self._check_cart(user_id)    
         result = await self.repository.clear_cart(cart.id)
         if not result: 
             raise ObjectNotFoundError('Items')
