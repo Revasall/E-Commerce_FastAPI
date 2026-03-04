@@ -1,8 +1,8 @@
 import jwt
 from fastapi import Depends
-from typing import Annotated, List
+from typing import Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm, HTTPBearer
+from fastapi.security import OAuth2PasswordBearer, HTTPBearer
 
 
 from ..services.user_service import UserService
@@ -10,7 +10,6 @@ from ..schemas.user_sсheme import UserCreate, UserRead, UserUpdate
 from ..schemas.token_sсheme import Token
 from ..models.user import User
 from ..core.exceptions import ObjectNotFoundError, InvalidCredentialsError, InvalidTokenError, UserCreateError
-from ..core.utils import ensure_exists
 from ..core.security import security_service
 from ..database.database import SessionDep
 
@@ -18,15 +17,18 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/login')
 http_bearer = HTTPBearer()
 
 class AuthService:
+    """
+    Orchestrator for authentication and authorization logic.
+    Coordinates between UserService for data persistence and SecurityService for JWT operations.
+    """
+
     def __init__(self, db: AsyncSession):
         self.service = UserService(db)
         self.security = security_service
 
-    async def get_current_user(
-            self,
-            token: str
-            ) -> UserRead:
-        
+    async def get_current_user(self,token: str) -> UserRead:
+        """Validates an access token and retrieves the associated user profile."""
+
         try: 
             payload = self.security.decode_jwt_token(token, expected_type='access')
             user_id: str = payload.get('sub')
@@ -39,16 +41,16 @@ class AuthService:
         except ObjectNotFoundError:
             raise InvalidCredentialsError
 
-             
-
     
     async def autenticate_user(
             self, 
-            email:str,
+            username:str,
             plain_password: str
             ) -> User:
+        """Verifies user credentials and issues a new pair of tokens."""
+
         try:
-            user = await self.service.get_user_by_email(email, False)
+            user = await self.service.get_user_by_username(username, False)
         except ObjectNotFoundError:
             raise InvalidCredentialsError
         if not self.security.verify_password(plain_password, user.hashed_password):
@@ -76,6 +78,12 @@ class AuthService:
             self, 
             user_reg_data: UserCreate
             ) -> Token: 
+        """
+        Handles the end-to-end registration process:
+        1. Hashes the raw password.
+        2. Persists the user via UserService.
+        3. Generates initial authentication tokens.
+        """
         
         hashed_password = self.security.get_password_hash(user_reg_data.hashed_password)
         user_reg_data.hashed_password = hashed_password
@@ -96,6 +104,7 @@ class AuthService:
             self,
             refresh_token: str
             ) -> Token:
+        """Rotates JWT tokens using a valid refresh token."""
         
         payload = self.security.decode_jwt_token(refresh_token, 'refresh')
         user_id = int(payload['sub'])

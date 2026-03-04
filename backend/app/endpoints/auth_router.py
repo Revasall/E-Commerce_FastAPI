@@ -40,7 +40,7 @@ async def login(
     ) -> Token:
     """
     Standard OAuth2 compatible login. 
-    Accepts 'username' (email) and 'password' to issue access/refresh tokens.
+    Accepts 'username' and 'password' to issue access/refresh tokens.
     """
     
     return await service.login_for_token(form_data.username, form_data.password)
@@ -60,5 +60,5 @@ async def refresh_access_token(
     Exchanges a Refresh token for a new Access token. 
     Requires a valid Refresh token in the Authorization header.
     """
-    
+
     return await service.refresh_access_token(credentials.credentials)

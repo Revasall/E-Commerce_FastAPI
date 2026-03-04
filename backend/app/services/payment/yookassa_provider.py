@@ -5,14 +5,29 @@ from backend.app.models.order import Order
 from backend.app.config.config import settings
 
 class YookassaProvider:
+    """
+    Integration provider for Yookassa payment gateway.
+    Handles payment session creation and configuration using the official SDK.
+    """
+
     def __init__(self):
+        # Initialize credentials from application settings
         Configuration.account_id = settings.ecommerce.ACCOUNT_ID
         Configuration.secret_key = settings.ecommerce.SECRET_KEY
 
     async def create_payment_link(self, order: Order) -> tuple[str]:
-        '''
-        Create sessionf of payment and return URL for redirect
-        '''
+        """
+        Registers a payment in Yookassa and generates a checkout URL.
+        
+        Args:
+            order: The Order model instance containing total price and ID.
+            
+        Returns:
+            tuple: (confirmation_url, payment_id)
+            
+        Note:
+            Uses thread executor to run synchronous SDK calls in an async environment.
+        """
 
         idempotency_key = str(uuid.uuid4())
 
@@ -34,6 +49,7 @@ class YookassaProvider:
             }
         }
 
+        # SDK is synchronous, so we offload it to a thread to avoid blocking the event loop
         loop = asyncio.get_running_loop()
         payment = await loop.run_in_executor(
             None,
