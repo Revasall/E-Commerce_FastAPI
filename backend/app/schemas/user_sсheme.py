@@ -23,7 +23,7 @@ class UserCreate(UserBase):
     Includes sensitive password data which is never returned in responses.
     """
     
-    hashed_password: str = Field(..., min_length=8, max_length=30, description="Raw password string for registration")
+    password: str = Field(..., min_length=8, max_length=30, description="Raw password string for registration")
 
 class UserRead(UserBase):
     """

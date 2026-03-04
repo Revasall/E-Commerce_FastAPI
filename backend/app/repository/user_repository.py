@@ -23,14 +23,15 @@ class UserRepository:
         """
 
         try:
-            new_user = User(**user_data.model_dump())
+            new_user = User(**user_data.model_dump(exclude='password'))
+            new_user.hashed_password = user_data.password
             self.db.add(new_user)
             await self.db.commit()
             await self.db.refresh(new_user)
             return new_user
         except IntegrityError:
             await self.db.rollback()
-            raise ObjectAlreadyExistsError('User with this username or email already exist.')
+            raise ObjectAlreadyExistsError('User with this username or email')
         
     async def get_all_users(self) -> List[User] | None:
         """Retrieves a list of all registered users."""
@@ -77,7 +78,7 @@ class UserRepository:
         Removes a user record from the system.
         Returns the deleted User instance or None if not found.
         """
-        
+
         user = await self.db.get(User, user_id)#await self.db.scalar(select(User).where(User.id == user_id))
 
         if user:

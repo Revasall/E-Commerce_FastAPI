@@ -85,8 +85,8 @@ class AuthService:
         3. Generates initial authentication tokens.
         """
         
-        hashed_password = self.security.get_password_hash(user_reg_data.hashed_password)
-        user_reg_data.hashed_password = hashed_password
+        hashed_password = self.security.get_password_hash(user_reg_data.password)
+        user_reg_data.password = hashed_password
         new_user = await self.service.create_user(user_reg_data)
 
         if not new_user:
@@ -105,7 +105,7 @@ class AuthService:
             refresh_token: str
             ) -> Token:
         """Rotates JWT tokens using a valid refresh token."""
-        
+
         payload = self.security.decode_jwt_token(refresh_token, 'refresh')
         user_id = int(payload['sub'])
         if user_id is None:

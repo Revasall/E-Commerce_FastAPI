@@ -25,7 +25,6 @@ class UserService:
         if existing:
             raise ObjectAlreadyExistsError('User with this email already exist.')
         
-        hashed_password = user_data.hashed_password
         new_user = await self.repository.create_user(user_data)
 
         return new_user
