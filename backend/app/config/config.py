@@ -44,15 +44,15 @@ class DataBaseSettings(BaseSettings):
 
     model_config = ConfigDict(env_file = '.env', extra='ignore')
 
-    DB_USER: str = Field(default='postgres')
-    DB_PASSWORD: str = Field(default='password')
-    DB_HOST: str = Field(default='localhost')
-    DB_PORT: str = Field(default='5432')
-    DB_NAME: str = Field(default='e-commerce_fastapi')
-    DB_ECHO: bool = Field(default=True)
+    POSTGRES_USER: str = Field(default='postgres')
+    POSTGRES_PASSWORD: str = Field(default='password')
+    POSTGRES_HOST: str = Field(default='localhost')
+    POSTGRES_PORT: str = Field(default='5432')
+    POSTGRES_NAME: str = Field(default='e-commerce_fastapi')
+    ECHO: bool = Field(default=True)
     @property
     def database_url(self) -> str:
-        return f'postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}'
+        return f'postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_NAME}'
 
 class ECommerceSettings(BaseSettings):
     """""

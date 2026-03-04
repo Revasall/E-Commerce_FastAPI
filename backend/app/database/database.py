@@ -9,7 +9,7 @@ from ..config.config import settings
 
 engine = create_async_engine(
     settings.database.database_url, 
-    echo=settings.database.DB_ECHO
+    echo=settings.database.ECHO
     )
 
 async_session = async_sessionmaker(engine)
