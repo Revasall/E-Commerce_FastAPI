@@ -6,7 +6,7 @@ from backend.app.api.deps import UserDep, allow_admin
 from ..schemas.order_sсheme import OrderRead, OrderWithPaymentResponce
 from ..services.order_service import OrderServiceDep
 
-router = APIRouter(prefix='/orders', tags=['Order'])
+router = APIRouter(prefix='/orders', tags=['Orders'])
 
 @router.post(
         '/create', 

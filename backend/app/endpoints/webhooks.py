@@ -7,10 +7,12 @@ router = APIRouter(prefix='/webhooks', tags=["Payments"])
 @router.post(
         '/yookassa',
         summary="Handle Yookassa payment notifications",
-    description="Endpoint for receiving asynchronous payment status updates from Yookassa via webhooks."
-    )
+        description="Endpoint for receiving asynchronous payment status updates from Yookassa via webhooks."
+        )   
 async def yookassa_webhook(request: Request,
-                           service: OrderServiceDep):
+                           service: OrderServiceDep,
+                        #    message_data: YookassaScheme
+                           ):
     """
     Processes incoming payment notifications.
     On 'payment.succeeded' event, extracts order_id from metadata and updates order status.
