@@ -24,6 +24,9 @@ Stability & Protection: SlowAPI for rate limiting and DDoS protection.
 Other libraries and technologies used can be found in requirements.txt.
 
 ## Features
+![](https://github.com/Revasall/E-Commerce_FastAPI/blob/master/images/Docs1.png)
+![](https://github.com/Revasall/E-Commerce_FastAPI/blob/master/images/Docs2.png)
+![](https://github.com/Revasall/E-Commerce_FastAPI/blob/master/images/Docs3.png)
 
 - __Secure Authentication (JWT & OAuth2)__
   - OAuth2 with Password Grant: Implemented standard-compliant login flow with Access and Refresh tokens.
@@ -82,5 +85,62 @@ The database is designed with strict relational integrity. Key features include:
 * **Asynchronous Access:** Full compatibility with `asyncpg` for non-blocking DB operations.
 * **Strict Typing:** Extensive use of PostgreSQL Enums for Order Statuses and User Roles.
 
+## **Installation & Setup**
+You can run the project either directly on your machine or using Docker (recommended).
 
- 
+**Option 1**: Docker
+1. Clone the repository:
+```
+git clone https://github.com/Revasall/E-Commerce_FastAPI
+cd E-Commerce_FastAPI/backend
+```
+2. Configure environment:
+Create a .env file based on .env.example. (Set up two env files: one in the backend folder, the second in the public project folder)
+
+4. Run with Docker Compose:
+```
+docker-compose up --build
+```
+
+**Option 2**: Local Development
+1. Clone the repository:
+```
+git clone https://github.com/Revasall/E-Commerce_FastAPI
+cd E-Commerce_FastAPI/backend
+```
+2. Environment & Dependencies:
+```
+python -m venv .venv
+source .venv/bin/activate  # Linux/macOS
+# OR .venv\Scripts\activate for Windows
+
+pip install -r requirements.txt
+```
+3. Database Setup:
+- Create a PostgreSQL database.
+- Configure your .env file. (Set up two env files: one in the backend folder, the second in the public project folder)
+- Run migrations:
+```
+alembic upgrade head
+```
+4. Launch:
+```
+uvicorn app.main:app --reload
+```
+
+5. API Access
+- **Base URL**: http://localhost:8000
+- **Interactive Docs (Swagger)**: http://localhost:8000/docs
+
+
+## Author 
+
+Macvej Reut 
+
+Python backend developer
+
+Project URL: https://roadmap.sh/projects/ecommerce-api
+
+📧 Email: [matvejreut@gmail.com]
+
+🐙 GitHub: [https://github.com/Revasall]
