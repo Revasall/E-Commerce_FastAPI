@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, status, Depends
 
-from backend.app.api.deps import UserDep, allow_admin
+from ..api.deps import UserDep, allow_admin
 
 from ..schemas.product_sсheme import ProductRead, ProductCreate, ProductUpdate
 from ..services.product_service import ProductServiceDep

@@ -1,8 +1,8 @@
 import uuid
 import asyncio
 from yookassa import Configuration, Payment
-from backend.app.models.order import Order
-from backend.app.config.config import settings
+from ...models.order import Order
+from ...config.config import settings
 
 class YookassaProvider:
     """

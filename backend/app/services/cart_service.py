@@ -2,9 +2,9 @@ from fastapi import Depends
 from typing import Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.models.cart import Cart
-from backend.app.repository.cart_repository import CartRepository
-from backend.app.repository.product_repository import ProductRepository
+from ..models.cart import Cart
+from ..repository.cart_repository import CartRepository
+from ..repository.product_repository import ProductRepository
 
 from ..schemas.cart_sсheme import CartItemCreate, CartItemRead, CartItemUpdate, CartScheme
 from ..core.exceptions import ObjectNotFoundError

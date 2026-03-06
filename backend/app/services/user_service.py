@@ -2,8 +2,7 @@ from fastapi import Depends
 from typing import Annotated, List
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.core.security import security_service
-
+from ..core.security import security_service
 
 from ..repository.user_repository import UserRepository
 from ..schemas.user_sсheme import UserCreate, UserRead, UserUpdate

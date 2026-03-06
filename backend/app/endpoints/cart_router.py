@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter
 
-from backend.app.api.deps import UserDep, allow_admin
+from ..api.deps import UserDep, allow_admin
 
 from ..schemas.cart_sсheme import CartItemCreate, CartItemUpdate, CartScheme
 from ..services.cart_service import CartServiceDep

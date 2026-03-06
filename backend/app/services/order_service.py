@@ -4,12 +4,12 @@ from fastapi import Depends
 from typing import Annotated, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.models.order import Order, OrderStatus
-from backend.app.repository.order_repository import OrderRepository
-from backend.app.repository.cart_repository import CartRepository
-from backend.app.services.cart_service import CartService
+from ..models.order import Order, OrderStatus
+from ..repository.order_repository import OrderRepository
+from ..repository.cart_repository import CartRepository
+from ..services.cart_service import CartService
 
-from backend.app.services.payment.yookassa_provider import YookassaProvider
+from ..services.payment.yookassa_provider import YookassaProvider
 
 from ..schemas.cart_sсheme import CartItemCreate, CartItemRead, CartItemUpdate, CartScheme
 from ..schemas.order_sсheme import OrderCreate, OrderItemCreate, OrderItemRead, OrderRead, OrderUpdate, OrderWithPaymentResponce

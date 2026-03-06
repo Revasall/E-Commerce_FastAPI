@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, Depends, HTTPException
-from backend.app.services.order_service import OrderServiceDep
+from ..services.order_service import OrderServiceDep
 import logging
 
 router = APIRouter(prefix='/webhooks', tags=["Payments"])

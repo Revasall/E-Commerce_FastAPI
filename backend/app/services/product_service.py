@@ -2,7 +2,7 @@ from fastapi import Depends
 from typing import Annotated, List
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.repository.category_repository import CategoryRepository
+from ..repository.category_repository import CategoryRepository
 
 
 from ..repository.product_repository import ProductRepository
