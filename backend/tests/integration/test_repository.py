@@ -33,7 +33,7 @@ class TestUserRepository:
             email='test@test.com',
             first_name='Test',
             last_name='TestTest',
-            hashed_password='123321'
+            password='123123123'
         )
 
         

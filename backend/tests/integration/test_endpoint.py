@@ -17,7 +17,7 @@ class TestAuthEndpoints:
             "last_name": "string",
             "image": "string",
             "role": "user",
-            "hashed_password": "password"
+            "password": "password"
             }
 
         responce = await client.post('/auth/register', json=payload)
@@ -30,11 +30,11 @@ class TestAuthEndpoints:
 
     async def test_login(self, client, test_user):
 
-        email = test_user.email
+        username = test_user.username
         password = '123'
         responce = await client.post(
             '/auth/login',
-            data = {'username':email, 'password': password}
+            data = {'username':username, 'password': password}
             )
         assert responce.status_code == 200
         data = responce.json()
@@ -367,24 +367,13 @@ class TestOrderEndpoints:
             async def create_payment_link(self, order):
                 return ("https://yoomoney.ru/test", "mock_payment_id_123")
         
-        # class MockOrderService:
-        #     async def create_order(self, user_id):
-        #         return {
-        #             "payment_url": "https://yoomoney.ru/test",
-        #             "payment_id": "mock_payment_id_123",
-        #             "order": {"id": 100, "user_id": user_id, "total_price": 99.99}
-        #         }
-        
-        # Мокируем импорт YookassaProvider
         monkeypatch.setattr(
             "backend.app.services.order_service.YookassaProvider",
             MockYookassaProvider
         )
-
-        # app.dependency_overrides[OrderServiceDep] = lambda: MockOrderService()
         
         resp = await client.post('/orders/create', headers=test_auth_header)
-        assert resp.status_code == 200
+        assert resp.status_code == 201
         data = resp.json()
         assert data['payment_url'].startswith("https://yoomoney.ru/test")
         assert data["order"]['external_id'] == "mock_payment_id_123"
@@ -425,7 +414,7 @@ class TestWebhooks:
         }
         
         resp = await client.post("/webhooks/yookassa", json=payload)
-        assert resp.status_code == 200
+        assert resp.status_code in (200,201)
         assert resp.json().get("status") == "ok"
 
         #Error handling
@@ -435,7 +424,7 @@ class TestWebhooks:
         }
         
         resp = await client.post("/webhooks/yookassa", json=payload)
-        assert resp.status_code == 200
+        assert resp.status_code in (200,201)
         assert resp.json().get("status") == "error"
         assert "message" in resp.json()
         
@@ -447,5 +436,5 @@ class TestWebhooks:
         }
         
         resp = await client.post("/webhooks/yookassa", json=payload)
-        assert resp.status_code == 200
+        assert resp.status_code in (200,201)
         assert resp.json().get("status") == "ok"

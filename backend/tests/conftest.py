@@ -106,7 +106,7 @@ async def test_admin(session):
 async def test_refresh_token(client, test_user):
     """Returns authorization headers with a valid access token."""
     responce = await client.post('/auth/login', data={
-        'username': test_user.email,
+        'username': test_user.username,
         'password': '123'
     })
     data = responce.json()
@@ -118,7 +118,7 @@ async def test_refresh_token(client, test_user):
 async def test_auth_header(client, test_user):
     """Returns authorization headers with a valid access token."""
     responce = await client.post('/auth/login', data={
-        'username': test_user.email,
+        'username': test_user.username,
         'password': '123'
     })
     data = responce.json()
@@ -129,7 +129,7 @@ async def test_auth_header(client, test_user):
 async def test_admin_auth_header(client, test_admin):
     """Returns authorization headers with a valid access token."""
     responce = await client.post('/auth/login', data={
-        'username': test_admin.email,
+        'username': test_admin.username,
         'password': '123'
     })
     data = responce.json()

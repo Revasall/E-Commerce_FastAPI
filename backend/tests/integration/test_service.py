@@ -36,7 +36,7 @@ class TestUserService:
             email='create@test.com',
             first_name='Test',
             last_name='Test',
-            hashed_password='123321'
+            password='123123123'
         )
 
         user_in_db = await user_ser.create_user(user)
@@ -116,7 +116,7 @@ class TestAuthService:
             email='regist@test.com',
             first_name='Test',
             last_name='Test',
-            hashed_password='123321'
+            password='123123123'
         )
 
         token_data = await auth_serv.register_user(new_user)
@@ -125,7 +125,7 @@ class TestAuthService:
         assert token_data.refresh_token is not None
 
         user_in_db = await auth_serv.service.get_user_by_username(new_user.username, scheme=False)
-        assert auth_serv.security.verify_password('123321', user_in_db.hashed_password)
+        assert auth_serv.security.verify_password('123123123', user_in_db.hashed_password)
 
     async def test_autenticate_and_login(self,session,test_user):
 
@@ -133,19 +133,19 @@ class TestAuthService:
 
         password = '123'
 
-        auth_user = await auth_serv.autenticate_user(test_user.email ,password)
-        assert auth_user.email == test_user.email
+        auth_user = await auth_serv.autenticate_user(test_user.username ,password)
+        assert auth_user.username == test_user.username
 
         with pytest.raises(InvalidCredentialsError) as err_auth:
-            await auth_serv.autenticate_user(test_user.email ,'bad_pass')
+            await auth_serv.autenticate_user(test_user.username ,'bad_pass')
         assert err_auth.value.status_code == 401
         
-        token_data = await auth_serv.login_for_token(test_user.email ,password)
+        token_data = await auth_serv.login_for_token(test_user.username ,password)
         assert token_data.access_token is not None
         assert token_data.refresh_token is not None
 
         with pytest.raises(InvalidCredentialsError) as err_auth:
-            await auth_serv.login_for_token(test_user.email ,'bad_pass')
+            await auth_serv.login_for_token(test_user.username ,'bad_pass')
         assert err_auth.value.status_code == 401
 
         
@@ -154,7 +154,7 @@ class TestAuthService:
         auth_serv = AuthService(session)
 
         password = '123'
-        token_data = await auth_serv.login_for_token(test_user.email ,password)
+        token_data = await auth_serv.login_for_token(test_user.username ,password)
 
         good_user = await auth_serv.get_current_user(token_data.access_token)
         assert isinstance(good_user, UserRead)
@@ -169,7 +169,7 @@ class TestAuthService:
         auth_serv = AuthService(session)
 
         password = '123'
-        old_tokens = await auth_serv.login_for_token(test_user.email ,password)
+        old_tokens = await auth_serv.login_for_token(test_user.username ,password)
 
         token_data = await auth_serv.refresh_access_token(old_tokens.refresh_token)
         assert token_data.access_token is not None
