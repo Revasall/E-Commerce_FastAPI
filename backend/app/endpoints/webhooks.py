@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Depends, HTTPException
+from fastapi import APIRouter, Request
 from ..services.order_service import OrderServiceDep
 import logging
 

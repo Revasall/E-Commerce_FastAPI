@@ -1,3 +1,4 @@
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -10,6 +11,7 @@ from ..app.models.user import User, UserRole
 from ..app.models.cart import Cart, CartItem 
 from ..app.models import Base, Category, Product
 from ..app.database.database import get_session
+from ..app.core.limiter import limiter
 
 
 SQLALCHEMY_DATABASE_URL = 'sqlite+aiosqlite:///:memory:?cache=shared'
@@ -42,6 +44,11 @@ async def client(session):
     async with AsyncClient(transport=transport, base_url='http://test') as ac:
         yield ac
     app.dependency_overrides.clear()
+
+@pytest.fixture(autouse=True)
+def disable_rate_limiter():
+    """Disables the limiter for all tests."""
+    limiter.enabled = False
 
 @pytest_asyncio.fixture(scope='function')
 async def test_user(session):

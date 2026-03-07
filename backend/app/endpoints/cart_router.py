@@ -1,10 +1,10 @@
-from typing import List
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
-from ..api.deps import UserDep, allow_admin
+from ..api.deps import UserDep
 
 from ..schemas.cart_sсheme import CartItemCreate, CartItemUpdate, CartScheme
 from ..services.cart_service import CartServiceDep
+from ..core.limiter import limiter
 
 router = APIRouter(prefix='/cart', tags=['Cart'])
 
@@ -13,7 +13,10 @@ router = APIRouter(prefix='/cart', tags=['Cart'])
         response_model=CartScheme,
         summary="Get user cart"
         )
-async def get_cart(current_user: UserDep, service: CartServiceDep):
+@limiter.limit('60/minute')
+async def get_cart(request: Request,
+                   current_user: UserDep, 
+                   service: CartServiceDep):
     """Retrieve the current authenticated user's shopping cart."""
     
     return await service.get_cart(current_user.id)
@@ -24,7 +27,9 @@ async def get_cart(current_user: UserDep, service: CartServiceDep):
         summary="Add item to cart",
         responses={404: {"description": "Product not found"}}
         )
-async def add_item(current_user: UserDep, 
+@limiter.limit('20/minute')
+async def add_item(request: Request,
+                   current_user: UserDep, 
                    service: CartServiceDep,
                    item_data: CartItemCreate):
     """Add a product to the cart or increase quantity if it already exists."""
@@ -36,7 +41,9 @@ async def add_item(current_user: UserDep,
         response_model=CartScheme,
         summary="Update item quantity"
         )
-async def update_cart(current_user: UserDep,
+@limiter.limit('20/minute')
+async def update_cart(request: Request,
+                      current_user: UserDep,
                       service: CartServiceDep,
                       item_id: int,
                       item_data: CartItemUpdate):
@@ -48,7 +55,9 @@ async def update_cart(current_user: UserDep,
         '/items/{item_id}', 
         response_model=CartScheme,
         summary="Remove item from cart")
-async def remove_item(current_user: UserDep,
+@limiter.limit('20/minute')
+async def remove_item(request: Request,
+                      current_user: UserDep,
                       service: CartServiceDep,
                       item_id: int):
     """Delete a specific product line from the cart."""

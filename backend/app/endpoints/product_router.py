@@ -1,10 +1,11 @@
 from typing import List
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, Request, status, Depends
 
 from ..api.deps import UserDep, allow_admin
 
 from ..schemas.product_sсheme import ProductRead, ProductCreate, ProductUpdate
 from ..services.product_service import ProductServiceDep
+from ..core.limiter import limiter
 
 
 router = APIRouter(prefix='/products', tags=['Products'])
@@ -29,7 +30,10 @@ async def create_product(
         '/', 
         response_model=List[ProductRead],
         summary="Get all products")
-async def get_all_products(service: ProductServiceDep):
+@limiter.limit('60/minute')
+async def get_all_products(
+    request: Request,
+    service: ProductServiceDep):
     """Retrieves the full list of available products."""
     
     return await service.get_all_products()
@@ -38,7 +42,9 @@ async def get_all_products(service: ProductServiceDep):
         '/{category_slug}', 
         response_model=List[ProductRead],
         summary="Get products by category slug")
+@limiter.limit('60/minute')
 async def get_product_by_category(
+    request: Request,
     category_slug: str,
     service: ProductServiceDep
     ):
@@ -51,7 +57,9 @@ async def get_product_by_category(
         response_model=ProductRead, 
         summary="Get product by ID"
         )
+@limiter.limit('100/minute')
 async def get_product_by_id(
+    request: Request,
     product_id: int,
     service: ProductServiceDep
     ):

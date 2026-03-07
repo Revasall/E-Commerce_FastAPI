@@ -1,9 +1,10 @@
 from typing import List
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Request, status
 
 from ..schemas.user_sсheme import UserRead, UserUpdate
 from ..services.user_service import UserServiceDep
 from ..api.deps import UserDep
+from ..core.limiter import limiter
 
 
 router = APIRouter(prefix='/users', tags=['Users'])
@@ -14,7 +15,11 @@ router = APIRouter(prefix='/users', tags=['Users'])
         response_model=List[UserRead],
         summary="Get all users"
         )
-async def get_all_users(service: UserServiceDep):
+@limiter.limit('10/minute')
+async def get_all_users(
+    request: Request,
+    service: UserServiceDep
+    ):
     """
     Retrieve a list of all registered users. 
     Typically restricted to administrators in a production environment.
@@ -27,7 +32,10 @@ async def get_all_users(service: UserServiceDep):
         response_model=UserRead,
         summary="Get current user profile"
         )
-async def get_current_user(current_user: UserDep):
+@limiter.limit('10/minute')
+async def get_current_user(
+    request: Request,
+    current_user: UserDep):
     """Return the profile data of the currently authenticated user based on the JWT token."""
     
     return current_user
@@ -37,7 +45,9 @@ async def get_current_user(current_user: UserDep):
         response_model=UserRead,
         summary="Get user by ID"
         )
+@limiter.limit('10/minute')
 async def get_user_by_id(
+    request: Request,
     user_id: int,
     service: UserServiceDep
 ):
@@ -50,7 +60,9 @@ async def get_user_by_id(
         response_model=UserRead,
         summary="Update current user profile"
         )
+@limiter.limit('10/minute')
 async def update_user(
+    request: Request,
     current_user: UserDep,
     user_data: UserUpdate,
     service: UserServiceDep):
@@ -63,7 +75,9 @@ async def update_user(
         response_model=UserRead, 
         status_code=status.HTTP_200_OK,
         summary="Delete current user account")
+@limiter.limit('5/minute')
 async def delete_user(
+    request: Request,
     current_user: UserDep,
     service: UserServiceDep
     ):

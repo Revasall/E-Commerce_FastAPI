@@ -5,6 +5,7 @@ from fastapi.security import HTTPBearer, OAuth2PasswordRequestForm, HTTPAuthoriz
 from ..schemas.user_sсheme import UserCreate
 from ..schemas.token_sсheme import Token
 from ..services.auth_service import AuthServiceDep
+from ..core.limiter import limiter
 
 
 router = APIRouter(prefix='/auth', tags=['Auth'])
@@ -16,8 +17,9 @@ http_bearer = HTTPBearer()
              summary="Register a new user",
              responses={400: {"description": "User already exists or validation failed"}}
              )
+@limiter.limit('10/minute')
 async def registration_user(
-    reques: Request,
+    request: Request,
     user_reg_data: UserCreate,
     service: AuthServiceDep
     ) -> Token:
@@ -33,6 +35,7 @@ async def registration_user(
         summary="Authenticate user and get tokens",
         responses={401: {"description": "Invalid username or password"}}
         )
+@limiter.limit('10/minute')
 async def login(
     request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -51,6 +54,7 @@ async def login(
         summary="Refresh access token",
         responses={401: {"description": "Invalid or expired refresh token"}}
         )
+@limiter.limit('10/minute')
 async def refresh_access_token(
     request: Request,
     service: AuthServiceDep,
